@@ -1,0 +1,72 @@
+Calculate size logic
+===
+
+sizeof string = sizeof ushort for length + sizeof char * length of string
+
+sizeof struct = if null: calculate_packed_size(struct) + 15 (15 is size of header)
+
+
+three types of arrays: variable-length normal, variable-length LargeArray, fixed-length
+(variable-length = -1 length in java)
+
+logic for calculate_packed_size:
+
+
+    for each field f:
+        if f is a single element:
+            if base type:
+                strings: sizeof string as above
+                else: sizeof(type)
+            if mdm struct: sizeof struct as above
+        if f is an array:
+            if large array: + sizeof(uint); if not: + sizeof(ushort)
+            for each element (fixed constant if fixed array):
+                if array is of structs: sizeof each struct as above
+                if array is of strings: sizeof string as above
+                if array is of other base type: sizeof type
+
+pack and unpack logic should be parallel. strings will be represented as a variable-length normal array
+
+typedef enum {
+    ARR_VAR,
+    ARR_VARLARGE,
+    ARR_FIXED
+} array_type;
+
+typedef struct {
+    size_t length;
+    array_type type;
+} array_info;
+
+typedef struct {
+    uint64_t f1;
+    S2** f2;
+    array_info f2i;
+    char* f3;
+    array_info f3i;
+} S;
+
+right now, fixed sized arrays will still carry around their length and be heap-allocated. this can be changed later.
+
+calculate size for S:
+size_t lmcp_str_getsize(char* s, array_info si) {
+    return 
+
+size_t lmcp_S_getsize(S* s) {
+size_t size = 0;
+size += sizeof(s->f1);
+
+size += (s->f2i.type == ARR_VARLARGE) ? sizeof(uint) : sizeof(ushort);
+for (int i = 0; i < s->f2i.length; i++)
+    if(s->f2[i])
+        size += lmcp_S2_getsize(s->f2[i]) + 15
+    else
+        size += 1
+
+size += sizeof(ushort)
+size += (as done in spec)
+}
+
+in the .h file:
+#define LMCP_S_SUBSCRIPTION = "subscription"
+#define LMCP_S_TYPENAME = "typename"
