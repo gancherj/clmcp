@@ -26,8 +26,8 @@ for each class:
        - toString (toXML never used)
        - getLmcpType / getLmcpTypeName
        - clone
-       - getSeriesName / getSeriesNameAsLong
-       - getSeriesVersion
+       - getSeriesName / getSeriesNameAsLong (handled by constants)
+       - getSeriesVersion (handled by constants)
 
 
 Common C++ initial generated code
@@ -60,6 +60,9 @@ instead of S::isS(Object* o) use lmcp_gettype(Object* o)
 generic calculate_packed_size
 
 
+need to support polymorphism in C++ layer
+
+
 Verification
 ===
 
@@ -68,3 +71,9 @@ verify c code after generation with SAW
 verify generators:
     - generator for calculate_packed_size
     - 
+
+
+serialization format: must start with
+lmcp control
+length
+start of struct

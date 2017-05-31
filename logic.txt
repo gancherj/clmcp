@@ -27,24 +27,6 @@ logic for calculate_packed_size:
 
 pack and unpack logic should be parallel. strings will be represented as a variable-length normal array
 
-typedef enum {
-    ARR_VAR,
-    ARR_VARLARGE,
-    ARR_FIXED
-} array_type;
-
-typedef struct {
-    size_t length;
-    array_type type;
-} array_info;
-
-typedef struct {
-    uint64_t f1;
-    S2** f2;
-    array_info f2i;
-    char* f3;
-    array_info f3i;
-} S;
 
 right now, fixed sized arrays will still carry around their length and be heap-allocated. this can be changed later.
 

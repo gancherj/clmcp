@@ -1,0 +1,69 @@
+#pragma once
+
+given a struct S,
+#define LMCP_S_SUBSCRIPTION "ldkjf"
+#define LMCP_S_TYPENAME "typename"
+#define LMCP_S_TYPENAMELONG 2398439
+
+typedef struct {
+    long type;
+} lmcp_object;
+
+typedef enum {
+    ARR_VAR,
+    ARR_VARLARGE,
+    ARR_FIXED
+} array_type;
+
+typedef struct {
+    size_t length;
+    array_type type;
+} array_info;
+
+typedef struct {
+    // base non-string fields
+    uint64_t f1;
+    // string field
+    char* f2;
+    array_info f2i;
+    // struct field
+    S2* f3;
+    // array of structs
+    S3** f3;
+    array_info f3i;
+
+    // if struct has inherited classes
+    long type;
+} struct_name;
+
+void lmcp_free_structname(structname* s) {
+}
+
+
+
+
+lmcp_object* readstruct (buffer):
+    if first byte 0, return NULL
+    8-byte series name
+    4-byte type
+    2-byte version #
+    switch on above information and return as lmcp_object*
+
+lmcp_object* readmessage (buffer):
+    check for lmcp control bytes
+    read in length
+    //start of root struct
+    return readstruct(buffer + length of above)
+
+lmcp_s* lmcp_s_readstruct(buffer):
+    assert seriesname,type,version correct
+    new s
+    calls:
+    lmcp_readbase(&f, buffer) for each base
+    lmcp_readstring(&f, &fi, buffer)
+    
+    for arrays:
+    read arraylen; initialize members
+    from 0 to array:
+        lmcp_readX(buffer)
+
