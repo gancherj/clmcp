@@ -77,3 +77,19 @@ serialization format: must start with
 lmcp control
 length
 start of struct
+
+
+per mdm data
+---
+seriesname
+seriesnameaslong = decimal of seriesname ascii or something
+namespace
+version
+
+per class data
+---
+
+subscription = namespace w/ dots || typename
+typename = class name
+type = some integer representation of typename
+

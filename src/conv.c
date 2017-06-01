@@ -1,6 +1,4 @@
-#include <stdint.h>
-#include <stdio.h>
-
+#include "conv.h"
 
 uint16_t i16_htonl (uint16_t in) {
     uint8_t* s = (uint8_t*)&in;
@@ -31,6 +29,3 @@ uint64_t i64_htonl (uint64_t in) {
     |((uint64_t)s[7] << 0);
 }
 
-int main() {
-
-}

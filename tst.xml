@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MDM SYSTEM 'MDM.DTD'>
+
+<MDM>
+    <SeriesName>MYTEST</SeriesName>
+    <Namespace>mytst/tst</Namespace>
+    <Version>1</Version>
+    <EnumList>
+        <Enum Name="myen">
+            <Entry Name="hi" Value="10"/>
+            <Entry Name = "hi2" />
+        </Enum>
+    </EnumList>
+    <StructList>
+        <Struct Name="TestStruct" Extends="otherstruct">
+            <Field Name="tstfield" Type="uint32[]"/>
+            <Field Name='ldj' Type="string" Units="hi"/>
+        </Struct>
+
+    </StructList>
+</MDM>
