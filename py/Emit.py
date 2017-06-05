@@ -1,87 +1,123 @@
-import re
+from MDM import *
 
-class TypeInfo:
-    basetypes = {
-        'byte': 'uint8_t',
-        'char': 'char',
-        'bool': 'bool',
-        'int16': 'int16_t',
-        'uint16': 'uint16_t',
-        'int32': 'int32_t',
-        'uint32': 'uint32_t',
-        'int64': 'int64_t',
-        'real32': 'float',
-        'real64': 'double',
-        'string': 'char*'}
+# emit_sizecalc: structinfo -> string
+# emit_structpack: structinfo -> string
+# emit_structunpack: structinfo -> string
 
-    def __init__(self, isarray, arraysize, typename):
-        self.isarray = isarray
-        self.arraysize = arraysize
-        self.typename = typename
-    
 
-def parse_type(typestr):
-    underlying = re.search('[a-zA-Z]+[0-9]*', typestr).group(0)
-    arrayparam = re.search('\[[0-9]*\]', typestr)
-    if arrayparam is not None:
-        arrayparam = arrayparam.group(0)
-        if arrayparam != '[]':
-            size = re.search(r'[0-9]+', arrayparam).group(0)
-            return TypeInfo(True, size, underlying)
+def emit_sizecalc(struct):
+    header = "uint32_t lmcp_"+struct.name+"_packsize ("+struct.name+"* i) { \n"
+    header += "uint32_t out = 0;\n"
+    if struct.parent != 'lmcp_object':
+        header += "out += lmcp_"+struct.parent+"_packsize(i->super);\n"
+    for field in struct.fields:
+        if not field.typeinfo.isarray:
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "out += sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
+            else:
+                header += "if (i->"+field.name+"==NULL) { \n"
+                header += "out += 1\n"
+                header += "else {\n"
+                header += "out += 15 + lmcp_"+field.typeinfo.typename+"_packsize(i->"+field.name+");}\n"
         else:
-            return TypeInfo(True, "-1", underlying)
-    else:
-        return TypeInfo(False, "", underlying)
+            if field.typeinfo.arraysize != "-1": #fixed size
+                header += "out += " + field.typeinfo.arraysize + "* sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
+            else:
+                if field.typeinfo.islargearray:
+                    header += "out += 4;\n"
+                else:
+                    header += "out += 2;\n"
+                header += "for (uint32_t index = 0; index < i->"+field.name+"_ai.length; index++) { \n"
+                if field.typeinfo.typename in TypeInfo.basetypes:
+                    header += "out += sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
+                else: 
+                    header += "out += 15 + lmcp_"+field.typeinfo.typename+"_packsize(i->"+field.name+"[index]);\n"
+                header += "} \n"
+    return header + "return out;} \n"
+
+
+def emit_pack_substruct(struct, fieldname, typename):
+    header = ""
+    header += "if (i->"+fieldname+"==NULL) { \n"
+    header += "lmcp_pack_uint8_t(outb, 0); outb += 1;\n"
+    header += "} else { \n"
+    header += "lmcp_pack_uint8_t(outb, 1); outb += 1; \n"
+    header += "memcpy(outb, \""+struct.seriesname+"\", 8); outb += 8; \n"
+    header += "lmcp_pack_uint32_t(outb, " + struct.id+"); outb += 4; \n"
+    header += "lmcp_pack_uint16_t(outb, " + struct.version+"); outb += 2; \n"
+    header += "lmcp_pack_"+typename+"(outb, i->"+fieldname+"); outb += lmcp_"+typename+"_packsize(i->"+fieldname+");\n"
+    header += "}\n"
+    return header
+
+
+def emit_structpack(struct): 
+    header = "void lmcp_pack_"+struct.name+"(uint8_t* buf, "+struct.name+"* i) { \n"
+    header += "uint8_t* outb = buf;\n"
+    if struct.parent != 'lmcp_object':
+        header += "lmcp_pack_" + struct.parent +"(outb, i->super);\n"
+    for field in struct.fields:
+        if not field.typeinfo.isarray:
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "lmcp_pack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(outb, i->"+field.name+");\n"
+            else:
+                header += emit_pack_substruct(struct, field.name, field.typeinfo.typename)
+        else:
+            if field.typeinfo.islargearray:
+                header += "lmcp_pack_uint32_t(outb, i->"+field.name+"_ai.length); outb += 4; \n"
+            else:
+                header += "lmcp_pack_uint16_t(outb, i->"+field.name+"_ai.length); outb += 2; \n"
+            header += "for (uint32_t index = 0; index < i->"+field.name+"_ai.length; index++) {\n"
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "lmcp_pack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(outb, i->"+field.name+"[index]); outb += sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
+            else:
+                header += emit_pack_substruct(struct, field.name + "[index]", field.typeinfo.typename)
+            header += "}\n"
+    return header + "}\n"
     
 
-def emit_field(field):
-    typeinfo = parse_type(field.attrib['Type'])
-    fieldstr = ""
-    if 'Units' in field.attrib:
-        fieldstr += "// Units: " + field.attrib['Units'] + "\n"
-
-    if typeinfo.typename in TypeInfo.basetypes:
-        underlying = TypeInfo.basetypes[typeinfo.typename]
-    else:
-        underlying = typeinfo.typename
-
-    if typeinfo.isarray:
-        underlying += "*"
-    
-    fieldstr += underlying + " " + field.attrib['Name'] + ";\n"
-    if typeinfo.isarray:
-        fieldstr += "array_info " + field.attrib['Name']+"_ai;\n"
-    return fieldstr
-
-def emit_structdef(struct):
-    if 'Extends' in struct.attrib:
-        parent = struct.attrib['Extends']
-    else:
-        parent = 'lmcp_object'
+def emit_unpack_substruct(struct, fieldname, typename):
+    header =  "inb += lmcp_unpack_uint8_t(inb, &isnull); \n"
+    header += "if (isnull == 0) { \n"
+    header += "out->"+fieldname+" = NULL; \n"
+    header += "} else { \n"
+    header += "out->"+fieldname+" = malloc(sizeof("+typename+"));\n"
+    header += "inb += lmcp_unpack_uint32_t(inb, &objtype);  \n"
+    header += "inb += lmcp_unpack_uint16_t(inb, &objseries);  \n"
+    header += "inb += lmcp_unpack_"+typename+"(inb, &(out->"+fieldname+")); \n"
+    return header
 
 
-    struct_header = "typedef struct {"
-    struct_footer = "} " + struct.attrib['Name'] + ";"
+def emit_structunpack(struct):
+    header = "void lmcp_unpack_"+struct.name+"(uint8_t* buf, " + struct.name + "* out) { \n"
+    header += "out = malloc(sizeof("+struct.name+"));\n"
+    header += "uint8_t* inb = buf; \n"
+    header += "uint32_t tmp; uint16_t tmp16; \n"
+    header += "uint8_t isnull; \n"
+    header += "uint32_t objtype; uint32_t objseries; \n"
+    if struct.parent != 'lmcp_object':
+        header += "inb += lmcp_unpack_"+struct.parent+"(inb, i->super);\n"
+    for field in struct.fields:
+        if not field.typeinfo.isarray:
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "inb += lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, " + field.name+");\n"
+            else:
+                header += emit_unpack_substruct(struct, field.name, field.typeinfo.typename)
+        else:
+            if field.typeinfo.islargearray:
+                header += "inb += lmcp_unpack_uint32_t(inb, &tmp);\n"
+            else:
+                header += "inb += lmcp_unpack_uint16_t(inb, &tmp16); tmp = tmp16;\n"
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "out->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*));\n"
+            else:
+                header += "out->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+"*));\n"
+            header += "out->"+field.name+"_ai.length = tmp;\n"
+            header += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "inb += lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, &out->" + field.name+"[index]);\n"
+            else:
+                header += emit_unpack_substruct(struct, field.name + "[index]", field.typeinfo.typename)
+            header += "}\n"
+    return header + "}\n"
 
-    parent_field = parent + " super;"
 
-    return '\n'.join([
-        struct_header,
-        parent_field] 
-        + [emit_field(field) for field in struct]
-        + [struct_footer])
-   
-def emit_enumvalue(value):
-    if 'Value' in value.attrib:
-        return value.attrib['Name']+" = "+value.attrib['Value']+","
-    else:
-        return value.attrib['Name']+","
-
-def emit_enumdef(enum):
-    enum_header = "typedef enum {"
-    enum_footer = "} " + enum.attrib['Name'] + ";"
-
-    return '\n'.join([
-        enum_header]
-        + [emit_enumvalue(value) for value in enum.findall('Entry')]
-        + [enum_footer])

@@ -4,26 +4,28 @@
 #include "conv.h"
 // from beej
 
-void lmcp_packi16 (uint8_t* buf, uint16_t in) {
+void lmcp_pack_uint16_t (uint8_t* buf, uint16_t in) {
     *buf++ = in >> 8; *buf++ = in;
 }
 
-uint16_t lmcp_unpacki16 (uint8_t* buf) {
-    return (buf[0] << 8) | buf[1];
+size_t lmcp_unpack_uint16_t (uint8_t* buf, uint16_t* out) {
+    *out = (buf[0] << 8) | buf[1];
+    return 2;
 }
 
-uint32_t lmcp_unpacki32(uint8_t *buf)
+size_t lmcp_unpack_uint32_t (uint8_t *buf, uint32_t* out)
 {
-	return (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+	*out = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+    return 4;
 }
 
-void lmcp_packi32(uint8_t *buf, uint32_t i)
+void lmcp_pack_uint32_t (uint8_t *buf, uint32_t i)
 {
 	*buf++ = i>>24; *buf++ = i>>16;
 	*buf++ = i>>8;  *buf++ = i;
 }
 
-void lmcp_packi64 (uint8_t *buf, uint64_t i) {
+void lmcp_pack_uint64_t (uint8_t *buf, uint64_t i) {
     *buf++ = i >> 56;
     *buf++ = i >> 48;
     *buf++ = i >> 40;
@@ -35,34 +37,38 @@ void lmcp_packi64 (uint8_t *buf, uint64_t i) {
 }
 
 
-uint64_t lmcp_unpacki64(uint8_t *buf)
+size_t lmcp_unpack_uint64_t (uint8_t *buf, uint64_t* out)
 {
-	return ((uint64_t)buf[0]<<56) | ((uint64_t)buf[1]<<48) | ((uint64_t)buf[2]<<40) | ((uint64_t)buf[3]<<32) | ((uint64_t)buf[4]<<24) | ((uint64_t)buf[5]<<16) | ((uint64_t)buf[6]<<8) | ((uint64_t)buf[7]);
+	*out = ((uint64_t)buf[0]<<56) | ((uint64_t)buf[1]<<48) | ((uint64_t)buf[2]<<40) | ((uint64_t)buf[3]<<32) | ((uint64_t)buf[4]<<24) | ((uint64_t)buf[5]<<16) | ((uint64_t)buf[6]<<8) | ((uint64_t)buf[7]);
+    return 8;
 }
 
 
-void lmcp_packs16 (uint8_t* buf, int8_t in) {
-    lmcp_packi16(buf, *(uint8_t*)&in);
+void lmcp_pack_int8_t (uint8_t* buf, int8_t in) {
+    lmcp_pack_uint8_t(buf, *(uint8_t*)&in);
 }
 
-void lmcp_packs32 (uint8_t* buf, int32_t in) {
-    lmcp_packi32(buf, *(uint8_t*)&in);
+void lmcp_pack_int32_t (uint8_t* buf, int32_t in) {
+    lmcp_pack_uint32_t(buf, *(uint8_t*)&in);
 }
-void lmcp_packs64 (uint8_t* buf, int64_t in) {
-    lmcp_packi64(buf, *(uint8_t*)&in);
+void lmcp_pack_int64_t (uint8_t* buf, int64_t in) {
+    lmcp_pack_uint64_t(buf, *(uint8_t*)&in);
 }
 
-int16_t lmcp_unpacks16 (uint8_t* buf) {
-    int16_t out = lmcp_unpacki16(buf);
-    return *(int16_t*)&out;
+size_t lmcp_unpack_int16_t (uint8_t* buf, int16_t* out) {
+    int16_t j; lmcp_unpack_uint16_t(buf, (uint16_t*)&j);
+    *out = *(int16_t*)&j;
+    return 2;
 }
-int32_t lmcp_unpacks32 (uint8_t* buf) {
-    int16_t out = lmcp_unpacki32(buf);
-    return *(int32_t*)&out;
+size_t lmcp_unpack_int32_t (uint8_t* buf, int32_t* out) {
+    int32_t j; lmcp_unpack_uint32_t(buf, (uint32_t*)&j);
+    *out= *(int32_t*)&j;
+    return 4;
 }
-int64_t lmcp_unpacks64 (uint8_t* buf) {
-    int16_t out = lmcp_unpacki32(buf);
-    return *(int64_t*)&out;
+size_t lmcp_unpack_int64_t (uint8_t* buf, int64_t* out) {
+    int64_t j; lmcp_unpack_uint64_t(buf,(uint64_t*)&j);
+    *out = *(int64_t*)&j;
+    return 8;
 }
 // macros for packing floats and doubles:
 #define pack754_32(f) (pack754((f), 32, 8))
@@ -133,34 +139,38 @@ long double unpack754(long long i, unsigned bits, unsigned expbits)
 
 void lmcp_pack_float(uint8_t* buf, float in) {
    uint32_t l = pack754_32(in);
-   lmcp_packi32(buf, l);
+   lmcp_pack_uint32_t(buf, l);
 }
 
-float lmcp_unpack_float(uint8_t* buf) {
-    uint32_t p = lmcp_unpacki32(buf);
-    return (float) unpack754_32(p);
+size_t lmcp_unpack_float(uint8_t* buf, float* out) {
+    uint32_t p;  lmcp_unpack_uint32_t(buf, &p);
+    *out = (float) unpack754_32(p);
+    return 4;
 }
 
 void lmcp_pack_double(uint8_t* buf, double in) {
    uint64_t l = pack754_64(in);
-   lmcp_packi64(buf, l);
+   lmcp_pack_uint64_t(buf, l);
 }
 
-double lmcp_unpack_double(uint8_t* buf) {
-    uint64_t p = lmcp_unpacki64(buf);
-    return (double) unpack754_64(p);
+size_t lmcp_unpack_double(uint8_t* buf, double* out) {
+    uint64_t p; lmcp_unpack_uint64_t(buf, &p);
+    *out = (double) unpack754_64(p);
+    return 8;
 } 
 
-void lmcp_pack_byte(uint8_t* buf, uint8_t in) {
+void lmcp_pack_uint8_t(uint8_t* buf, uint8_t in) {
     *buf = in;
 }
 
-uint8_t lmcp_unpack_byte(uint8_t* buf) {
-    return *buf;
+size_t lmcp_unpack_uint8_t(uint8_t* buf, uint8_t* out) {
+    *out = *buf;
+    return 1;
 }
 
-char lmcp_unpack_char(uint8_t* buf) {
-    return *buf;
+size_t lmcp_unpack_char(uint8_t* buf, char* out) {
+    *out = *buf;
+    return 1;
 }
 
 void lmcp_pack_char(uint8_t* buf, char in) {
@@ -181,25 +191,19 @@ uint16_t string_len(const char* in) {
 
 void lmcp_pack_string(uint8_t* buf, char* in) {
     uint16_t len = string_len(in);
-    lmcp_packi16(buf, len);
+    lmcp_pack_uint16_t(buf, len);
     buf += 2;
     for (uint16_t i = 0; i < len; i++)
         *buf++ = *in++;
 }
 
 uint16_t lmcp_unpack_stringlen(uint8_t* buf) {
-    uint16_t len = lmcp_unpacki16(buf) + 1;
-    return len;
+    uint16_t len; lmcp_unpack_uint16_t(buf, &len);
+    return len + 1;
 }
 
 void lmcp_unpack_string(uint8_t* buf, char* out, uint16_t len) {
     char* outbuf = out;
     for (uint16_t i = 0; i < len; i++)
         *outbuf++ = *buf++;
-}
-
-float float_packupack(float in) {
-    uint8_t buf[4];
-    lmcp_pack_float(buf, in);
-    return lmcp_unpack_float(buf);
 }

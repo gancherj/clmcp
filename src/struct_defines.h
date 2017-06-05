@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef struct {
     uint32_t type;
@@ -13,6 +14,6 @@ typedef enum {
 } array_type;
 
 typedef struct {
-    size_t length;
+    uint32_t length;
     array_type type;
 } array_info;
