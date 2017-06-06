@@ -1,4 +1,15 @@
+done:
+    - array / single field proofs
+
+    - inheritence works
+
+    - nested structs work
+
+    - init / free methods
+
 todo : 
+
+    - array proofs
 
     - verify that everything works:
         - enums

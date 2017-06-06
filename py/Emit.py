@@ -238,4 +238,3 @@ def emit_free_header(struct):
 
 Emits.methods['free'] = emit_free
 Emits.headers['free'] = emit_free_header
-# TODO: inductive lmcp free and alloc methods
