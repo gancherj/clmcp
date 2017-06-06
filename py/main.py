@@ -21,7 +21,7 @@ def emit(path, filename):
 
     for struct in mdm.structs:
         f = open(os.path.join(path, Emits.header_filename(struct)), 'w')
-        f.write(Emits.emit_header_top())
+        f.write(Emits.emit_header_top(struct))
         f.write(struct.emit())
         f.write(Emits.emit_header(struct))
         f.close()
