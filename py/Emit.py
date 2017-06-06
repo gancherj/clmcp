@@ -162,11 +162,11 @@ def emit_structunpack(struct):
     header += "uint8_t isnull; \n"
     header += "uint32_t objtype; uint32_t objseries; \n"
     if struct.parent != 'lmcp_object':
-        header += "inb += lmcp_unpack_"+struct.parent+"(inb, i->super);\n"
+        header += "inb += lmcp_unpack_"+struct.parent+"(inb, &(i->super));\n"
     for field in struct.fields:
         if not field.typeinfo.isarray:
             if field.typeinfo.typename in TypeInfo.basetypes:
-                header += "inb += lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, " + field.name+");\n"
+                header += "inb += lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, &(out->" + field.name+"));\n"
             else:
                 header += emit_unpack_substruct(struct, field.name, field.typeinfo.typename)
         else:

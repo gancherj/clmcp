@@ -41,7 +41,6 @@ def emit(path, filename):
     common_files = os.listdir(csrc_folder)
     for c in common_files:
         if os.path.isfile(os.path.join(csrc_folder, c)):
-            print('hi')
             shutil.copy(os.path.join(csrc_folder, c), os.path.join(path, 'common'))
 
 if __name__ == "__main__":
