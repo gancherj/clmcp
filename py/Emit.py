@@ -55,16 +55,17 @@ class Emits:
         return s
 
 def emit_init(struct):
-    header = "void lmcp_init_"+struct.name+" ("+struct.name+"* i) { \n"
-    header += "(*i) = (const "+struct.name+"){0};\n" 
+    header = "void lmcp_init_"+struct.name+" ("+struct.name+"** i) { \n"
+    header += "(*i) = malloc(sizeof("+struct.name+"));\n"
+    header += "*(*i) = (const "+struct.name+"){0};\n" 
     #if struct.parent != 'lmcp_object': if needed for something
     #    header += "out += lmcp_init_"+struct.parent+" (&i->super); \n"
-    header += "((lmcp_object*)i) -> type = "+struct.id+";\n"
+    header += "((lmcp_object*)(*i)) -> type = "+struct.id+";\n"
     header += "}\n"
     return header
 
 def emit_init_header(struct):
-    return "void lmcp_init_"+struct.name+" ("+struct.name+"* i);\n"
+    return "void lmcp_init_"+struct.name+" ("+struct.name+"** i);\n"
 
 Emits.methods['init'] = emit_init
 Emits.headers['init'] = emit_init_header
@@ -95,7 +96,7 @@ def emit_sizecalc(struct):
                 if field.typeinfo.typename in TypeInfo.basetypes:
                     header += "out += sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
                 else: 
-                    header += "out += 15 + lmcp_"+field.typeinfo.typename+"_packsize(i->"+field.name+"[index]);\n"
+                    header += "out += 15 + lmcp_packsize_"+field.typeinfo.typename+"(i->"+field.name+"[index]);\n"
                 header += "} \n"
     return header + "return out;} \n"
 
@@ -204,5 +205,37 @@ def emit_structunpack_header(struct):
 Emits.methods['structunpack'] = emit_structunpack
 Emits.headers['structunpack'] = emit_structunpack_header
 
+def emit_free_substruct(struct, fieldname, typename):
+    header = "if (out->"+fieldname+" != NULL) {\n"
+    header += "lmcp_free_"+typename+"(out->"+fieldname+");\n"
+    header += "free(out->"+fieldname+");\n"
+    header += "} \n"
+    return header
+    
 
+def emit_free(struct):
+    header = "void lmcp_free_"+struct.name+"("+struct.name+"* out) {\n"
+    header += "if (out == NULL) \n return; \n"
+    for field in struct.fields:
+        if not field.typeinfo.isarray:
+            if not field.typeinfo.typename in TypeInfo.basetypes:
+                header += emit_free_substruct(struct, field.name, field.typeinfo.typename)
+        else:
+            header += "if (out->"+field.name+" != NULL) { \n"
+            if field.typeinfo.typename in TypeInfo.basetypes:
+                header += "free (out->"+field.name+"); \n"
+            else:
+                header += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
+                header += emit_free_substruct(struct, field.name+"[index]", field.typeinfo.typename)
+                header += "}\n"
+            header += "} \n"
+    header += "free(out);\n"
+    header += "} \n"            
+    return header
+
+def emit_free_header(struct):
+    return "void lmcp_free_"+struct.name+"("+struct.name+"* i); \n"
+
+Emits.methods['free'] = emit_free
+Emits.headers['free'] = emit_free_header
 # TODO: inductive lmcp free and alloc methods

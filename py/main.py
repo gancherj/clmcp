@@ -1,4 +1,5 @@
 import MDM, os, errno
+import subprocess
 from Emit import Emits
 import argparse
 import shutil
@@ -42,6 +43,8 @@ def emit(path, filename):
     for c in common_files:
         if os.path.isfile(os.path.join(csrc_folder, c)):
             shutil.copy(os.path.join(csrc_folder, c), os.path.join(path, 'common'))
+
+    subprocess.call(["astyle", "-n", os.path.join(path, "*.c"), os.path.join(path,"*.h")])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generates C code from MDM file.")
