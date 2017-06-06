@@ -26,6 +26,8 @@ class Emits:
 '''
         if struct.parent != 'lmcp_object':
             s += '#include \"'+struct.parent+'.h\"\n'
+        for dep in struct.classdeps():
+            s += '#include \"'+dep+'.h\"\n'
 
         return s
     @staticmethod
@@ -40,8 +42,14 @@ class Emits:
         s += '''
 #include <stdlib.h>
 #include <inttypes.h>
+#include "common/struct_defines.h"
+#include "common/conv.h"
 '''
         s += '#include \"'+struct.name+'.h\"\n'
+        if struct.parent != 'lmcp_object':
+            s += '#include \"'+struct.parent+'.h\"\n'
+        for dep in struct.classdeps():
+            s += '#include \"'+dep+'.h\"\n'
         for m in Emits.methods:
             s += (Emits.methods[m])(struct)
         return s
@@ -72,9 +80,9 @@ def emit_sizecalc(struct):
                 header += "out += sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
             else:
                 header += "if (i->"+field.name+"==NULL) { \n"
-                header += "out += 1\n"
-                header += "else {\n"
-                header += "out += 15 + lmcp_"+field.typeinfo.typename+"_packsize(i->"+field.name+");}\n"
+                header += "out += 1;\n"
+                header += "} else {\n"
+                header += "out += 15 + lmcp_packsize_"+field.typeinfo.typename+"(i->"+field.name+");}\n"
         else:
             if field.typeinfo.arraysize != "-1": #fixed size
                 header += "out += " + field.typeinfo.arraysize + "* sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+");\n"
@@ -148,9 +156,11 @@ def emit_unpack_substruct(struct, fieldname, typename):
     header += "out->"+fieldname+" = NULL; \n"
     header += "} else { \n"
     header += "out->"+fieldname+" = malloc(sizeof("+typename+"));\n"
+    header += "memcpy(seriesname, inb, 8); inb += 8; \n"
     header += "inb += lmcp_unpack_uint32_t(inb, &objtype);  \n"
     header += "inb += lmcp_unpack_uint16_t(inb, &objseries);  \n"
     header += "inb += lmcp_unpack_"+typename+"(inb, &(out->"+fieldname+")); \n"
+    header += "}\n"
     return header
 
 
@@ -161,7 +171,7 @@ def emit_structunpack(struct):
     header += "uint8_t* inb = buf; \n"
     header += "uint32_t tmp; uint16_t tmp16; \n"
     header += "uint8_t isnull; \n"
-    header += "uint32_t objtype; uint32_t objseries; \n"
+    header += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
     if struct.parent != 'lmcp_object':
         header += "inb += lmcp_unpack_"+struct.parent+"(inb, &(out->super));\n"
     for field in struct.fields:
@@ -193,3 +203,6 @@ def emit_structunpack_header(struct):
 
 Emits.methods['structunpack'] = emit_structunpack
 Emits.headers['structunpack'] = emit_structunpack_header
+
+
+# TODO: inductive lmcp free and alloc methods

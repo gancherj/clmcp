@@ -77,7 +77,7 @@ class FieldInfo:
         if self.typeinfo.typename in TypeInfo.basetypes:
             underlying = TypeInfo.basetypes[self.typeinfo.typename]
         else:
-            underlying = self.typeinfo.typename
+            underlying = self.typeinfo.typename + "*"
         if self.typeinfo.isarray:
             underlying += "*"
         fieldstr += underlying + " " + self.name + ";\n"
@@ -118,6 +118,13 @@ class StructInfo:
             parent_field]
             + [f.emit() for f in self.fields]
             + [struct_footer])
+    
+    def classdeps(self):
+        out = []
+        for field in self.fields:
+            if field.typeinfo.typename not in TypeInfo.basetypes:
+                out += [field.typeinfo.typename]
+        return out
 
 class EnumInfo:
     def __init__(self, enum):
