@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MDM SYSTEM 'MDM.DTD'>
+
+<MDM>
+    <SeriesName>MYTEST</SeriesName>
+    <Namespace>mytst/tst</Namespace>
+    <Version>1</Version>
+    <StructList>
+        <Struct Name="Struct1" >
+            <Field Name="field1" Type="uint32"/>
+        </Struct>
+
+        <Struct Name="Struct2">
+            <Field Name="field2" Type="Struct1[]"/>
+        </Struct>
+
+    </StructList>
+</MDM>
