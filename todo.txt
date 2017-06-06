@@ -7,19 +7,15 @@ done:
 
     - init / free methods
 
+    - array proofs
+    
+    - uint proof
+
 todo : 
 
-    - array proofs
+    - check for memory safety w/r/t init, free
+   
+    - checksumming / checking magic numbers
 
-    - verify that everything works:
-        - enums
-        - nested structs / inheritance
-        - all control signals / message handling
-    
-    - try to prove uint safety
+    - fuzz deserializer
 
-    - add checksumming
-
-
-        
-        . if so, we can start trying to prove things about serializing uints. (also double check strings)
