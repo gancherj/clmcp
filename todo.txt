@@ -1,0 +1,14 @@
+todo : 
+
+    - verify that everything works:
+        - enums
+        - nested structs / inheritance
+        - all control signals / message handling
+    
+    - try to prove uint safety
+
+    - add checksumming
+
+
+        
+        . if so, we can start trying to prove things about serializing uints. (also double check strings)
