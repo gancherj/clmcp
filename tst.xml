@@ -12,9 +12,8 @@
         </Enum>
     </EnumList>
     <StructList>
-        <Struct Name="TestStruct" Extends="otherstruct">
+        <Struct Name="TestStruct" >
             <Field Name="tstfield" Type="uint32[]"/>
-            <Field Name='ldj' Type="string" Units="hi"/>
         </Struct>
 
     </StructList>

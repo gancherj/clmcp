@@ -101,7 +101,7 @@ class StructInfo:
         self.parentserieslong = struc.unpack(">Q", (str.encode(self.parentseries) + b'\0\0\0\0\0\0\0\0')[:8])
         self.fields = [FieldInfo(f) for f in struct]
         self.subscription = re.compile("/").sub(".", mdm.namespace) + '.' + self.name
-
+        #self.id created by mdm
     
     def emit(self):
 
