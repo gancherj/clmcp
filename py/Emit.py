@@ -111,15 +111,15 @@ Emits.methods['sizecalc'] = emit_sizecalc
 Emits.headers['sizecalc'] = emit_sizecalc_header
 
 
-def emit_pack_substruct(struct, fieldname, typename):
+def emit_pack_substruct(field, fieldname, typename):
     header = ""
     header += "if (i->"+fieldname+"==NULL) { \n"
     header += "outb += lmcp_pack_uint8_t(outb, 0);\n"
     header += "} else { \n"
     header += "outb += lmcp_pack_uint8_t(outb, 1);  \n"
-    header += "memcpy(outb, \""+struct.seriesname+"\", 8); outb += 8; \n"
-    header += "outb += lmcp_pack_uint32_t(outb, " + struct.id+"); \n"
-    header += "outb += lmcp_pack_uint16_t(outb, " + struct.version+"); \n"
+    header += "memcpy(outb, \""+field.seriesname+"\", 8); outb += 8; \n"
+    header += "outb += lmcp_pack_uint32_t(outb, " + field.id+"); \n"
+    header += "outb += lmcp_pack_uint16_t(outb, " + field.version+"); \n"
     header += "outb += lmcp_pack_"+typename+"(outb, i->"+fieldname+"); \n"
     header += "}\n"
     return header
@@ -127,6 +127,7 @@ def emit_pack_substruct(struct, fieldname, typename):
 
 def emit_structpack(struct): 
     header = "size_t lmcp_pack_"+struct.name+"(uint8_t* buf, "+struct.name+"* i) { \n"
+    header += "if (i == NULL) return; \n"
     header += "uint8_t* outb = buf;\n"
     if struct.parent != 'lmcp_object':
         header += "outb += lmcp_pack_" + struct.parent +"(outb, i->super);\n"
@@ -137,7 +138,7 @@ def emit_structpack(struct):
             elif field.kind == 'enum':
                 header += "outb += lmcp_pack_int32_t(outb, (int) i->"+field.name+");\n"
             elif field.kind == 'struct':
-                header += emit_pack_substruct(struct, field.name, field.typeinfo.typename)
+                header += emit_pack_substruct(field, field.name, field.typeinfo.typename)
         else:
             if field.typeinfo.islargearray:
                 header += "outb += lmcp_pack_uint32_t(outb, i->"+field.name+"_ai.length);  \n"
@@ -149,7 +150,7 @@ def emit_structpack(struct):
             elif field.kind == 'enum':
                 header += "outb += lmcp_pack_int32_t(outb, (int) i->"+field.name+"[index]);\n"
             elif field.kind == 'struct':
-                header += emit_pack_substruct(struct, field.name + "[index]", field.typeinfo.typename)
+                header += emit_pack_substruct(field, field.name + "[index]", field.typeinfo.typename)
             header += "}\n"
     return header + "return (outb - buf); }\n"
 

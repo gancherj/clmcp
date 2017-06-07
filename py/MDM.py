@@ -61,6 +61,9 @@ class FieldInfo:
     #units
     #name
     #kind
+    #typeid
+    #version
+    #series
     def fillkind(self, mdm):
         if self.typeinfo.typename in TypeInfo.basetypes:
             self.kind = 'base'
@@ -71,6 +74,11 @@ class FieldInfo:
         else:
             self.kind = 'unknown'
 
+        if self.kind == 'struct':
+            struct = mdm.get_struct(self.typeinfo.typename)
+            self.seriesname = struct.seriesname
+            self.id = struct.id
+            self.version = struct.version
 
     def __init__(self, f):
         self.typeinfo = TypeInfo(f.attrib['Type'])
@@ -238,6 +246,11 @@ class MDM:
             if struct.name == name:
                 return True
     
+    def get_struct(self, name):
+        for struct in self.structs:
+            if struct.name == name:
+                return struct
+
     def is_enum(self, name):
         for enum in self.enums:
             if enum.name == name:
