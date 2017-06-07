@@ -1,7 +1,9 @@
+TOMORROW/TONIGHT: inheritence is broken. see extend. fix before meeting
+
+
 done:
     - array / single field proofs
 
-    - inheritence works
 
     - nested structs work
 
@@ -17,5 +19,4 @@ todo :
    
     - checksumming / checking magic numbers
 
-    - fuzz deserializer
 

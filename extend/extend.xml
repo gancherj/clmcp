@@ -7,11 +7,11 @@
     <Version>1</Version>
     <StructList>
         <Struct Name="Struct1" >
-            <Field Name="field1" Type="uint32"/>
+            <Field Name="field1" Type="uint16"/>
         </Struct>
 
         <Struct Name="Struct2" Extends="Struct1">
-            <Field Name="field2" Type="uint32"/>
+            <Field Name="field2" Type="uint16"/>
         </Struct>
 
     </StructList>

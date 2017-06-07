@@ -110,7 +110,7 @@ class StructInfo:
         if self.parent == 'lmcp_object':
             parent_field = self.parent + " super;"
         else:
-            parent_field = self.parent + "* super;"
+            parent_field = self.parent + " super;"
         return '\n'.join([
             "#define LMCP_"+self.name+"_SUB \""+self.subscription+"\"\n",
             "#define LMCP_"+self.name+"_TYPENAME \""+self.name+"\"\n",

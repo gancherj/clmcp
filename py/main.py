@@ -24,7 +24,7 @@ def emit(path, filename):
         f = open(os.path.join(path, Emits.header_filename(struct)), 'w')
         f.write(Emits.emit_header_top(struct))
         f.write(struct.emit())
-        f.write(Emits.emit_header(struct))
+        f.write(Emits.emit_struct_header(struct))
         f.close()
 
         f = open(os.path.join(path, Emits.c_filename(struct)), 'w')
@@ -36,7 +36,15 @@ def emit(path, filename):
         for enum in mdm.enums:
             f.write(enum.emit())
         f.close()
-    
+   
+    f = open(os.path.join(path, 'lmcp.h'), 'w')
+    f.write(Emits.emit_toplevel_header(mdm))
+    f.close()
+
+    f = open(os.path.join(path, 'lmcp.c'), 'w')
+    f.write(Emits.emit_toplevel_c(mdm))
+    f.close()
+
 
     csrc_folder = os.path.join(get_script_path(), 'csrc')
     common_files = os.listdir(csrc_folder)
