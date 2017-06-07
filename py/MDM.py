@@ -60,6 +60,26 @@ class FieldInfo:
     #typeinfo
     #units
     #name
+    #kind
+    #typeid
+    #version
+    #series
+    def fillkind(self, mdm):
+        if self.typeinfo.typename in TypeInfo.basetypes:
+            self.kind = 'base'
+        elif mdm.is_struct(self.typeinfo.typename):
+            self.kind = 'struct'
+        elif mdm.is_enum(self.typeinfo.typename):
+            self.kind = 'enum'
+        else:
+            self.kind = 'unknown'
+
+        if self.kind == 'struct':
+            struct = mdm.get_struct(self.typeinfo.typename)
+            self.seriesname = struct.seriesname
+            self.id = struct.id
+            self.version = struct.version
+
     def __init__(self, f):
         self.typeinfo = TypeInfo(f.attrib['Type'])
         self.name = f.attrib['Name']
@@ -70,14 +90,17 @@ class FieldInfo:
         if 'LargeArray' in f.attrib:
             self.typeinfo.islargearray = True
 
+
     def emit(self):
         fieldstr = ""
         if self.units is not None:
             fieldstr += "// Units: " + self.units + " \n"
-        if self.typeinfo.typename in TypeInfo.basetypes:
+        if self.kind == 'base':
             underlying = TypeInfo.basetypes[self.typeinfo.typename]
-        else:
+        elif self.kind == 'struct':
             underlying = self.typeinfo.typename + "*"
+        elif self.kind == 'enum':
+            underlying = self.typeinfo.typename
         if self.typeinfo.isarray:
             underlying += "*"
         fieldstr += underlying + " " + self.name + ";\n"
@@ -90,6 +113,7 @@ class StructInfo:
         self.name = struct.attrib['Name']
         self.seriesname = (mdm.seriesname+"\0\0\0\0\0\0\0\0")[:8]
         self.version = mdm.version
+        self.mdm = mdm
         if 'Extends' in struct.attrib:
             self.parent = struct.attrib['Extends']
         else:
@@ -102,6 +126,10 @@ class StructInfo:
         self.fields = [FieldInfo(f) for f in struct]
         self.subscription = re.compile("/").sub(".", mdm.namespace) + '.' + self.name
         #self.id created by mdm
+
+    def fillkinds(self,mdm):
+        for field in self.fields:
+            field.fillkind(mdm)
     
     def emit(self):
 
@@ -119,12 +147,17 @@ class StructInfo:
             + [f.emit() for f in self.fields]
             + [struct_footer])
     
-    def classdeps(self):
+    def deps(self):
         out = []
+        seen_enum = False
         for field in self.fields:
-            if field.typeinfo.typename not in TypeInfo.basetypes:
+            if field.kind == 'struct':
                 out += [field.typeinfo.typename]
+            elif field.kind == 'enum' and not seen_enum:
+                out += ['enums']
+                seen_enum = True
         return out
+
 
 class EnumInfo:
     def __init__(self, enum):
@@ -195,6 +228,8 @@ class MDM:
         self.structs = [StructInfo(self, s) for s in structs]
         for i in range(len(self.structs)):
             self.structs[i].id = str(1+i)
+            self.structs[i].fillkinds(self)
+
         self.seriesnamelong = struc.unpack(">Q", (str.encode(seriesname) + b'\0\0\0\0\0\0\0\0')[:8])
 
 
@@ -206,3 +241,17 @@ class MDM:
             header += enum.emit()
         return header 
 
+    def is_struct(self,name):
+        for struct in self.structs:
+            if struct.name == name:
+                return True
+    
+    def get_struct(self, name):
+        for struct in self.structs:
+            if struct.name == name:
+                return struct
+
+    def is_enum(self, name):
+        for enum in self.enums:
+            if enum.name == name:
+                return True
