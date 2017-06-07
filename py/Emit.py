@@ -156,7 +156,6 @@ def emit_unpack_substruct(struct, fieldname, typename):
     header += "if (isnull == 0) { \n"
     header += "out->"+fieldname+" = NULL; \n"
     header += "} else { \n"
-    header += "out->"+fieldname+" = malloc(sizeof("+typename+"));\n"
     header += "memcpy(seriesname, inb, 8); inb += 8; \n"
     header += "inb += lmcp_unpack_uint32_t(inb, &objtype);  \n"
     header += "inb += lmcp_unpack_uint16_t(inb, &objseries);  \n"
@@ -187,9 +186,9 @@ def emit_structunpack(struct):
             else:
                 header += "inb += lmcp_unpack_uint16_t(inb, &tmp16); tmp = tmp16;\n"
             if field.typeinfo.typename in TypeInfo.basetypes:
-                header += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+") * tmp);\n"
+                header += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*) * tmp);\n"
             else:
-                header += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+") * tmp);\n"
+                header += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+"*) * tmp);\n"
             header += "out->"+field.name+"_ai.length = tmp;\n"
             header += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
             if field.typeinfo.typename in TypeInfo.basetypes:
@@ -227,6 +226,7 @@ def emit_free(struct):
                 header += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
                 header += emit_free_substruct(struct, field.name+"[index]", field.typeinfo.typename)
                 header += "}\n"
+            header += "free(out->"+field.name+");\n"
             header += "} \n"
     header += "free(out);\n"
     header += "} \n"            
