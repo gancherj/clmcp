@@ -22,11 +22,17 @@ size_t lmcp_unpack_Struct1(uint8_t* buf, Struct1** outp) {
     inb += lmcp_unpack_uint32_t(inb, &(out->field1));
     return (inb - buf);
 }
-void lmcp_init_Struct1 (Struct1* i) {
-    (*i) = (const Struct1) {
+void lmcp_init_Struct1 (Struct1** i) {
+    (*i) = malloc(sizeof(Struct1));
+    *(*i) = (const Struct1) {
         0
     };
-    ((lmcp_object*)i) -> type = 1;
+    ((lmcp_object*)(*i)) -> type = 1;
+}
+void lmcp_free_Struct1(Struct1* out) {
+    if (out == NULL)
+        return;
+    free(out);
 }
 size_t lmcp_pack_Struct1(uint8_t* buf, Struct1* i) {
     uint8_t* outb = buf;

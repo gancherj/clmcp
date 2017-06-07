@@ -208,7 +208,6 @@ Emits.headers['structunpack'] = emit_structunpack_header
 def emit_free_substruct(struct, fieldname, typename):
     header = "if (out->"+fieldname+" != NULL) {\n"
     header += "lmcp_free_"+typename+"(out->"+fieldname+");\n"
-    header += "free(out->"+fieldname+");\n"
     header += "} \n"
     return header
     
