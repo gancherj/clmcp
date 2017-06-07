@@ -33,6 +33,7 @@ def emit(path, filename):
         
     if len(mdm.enums) > 0:
         f = open(os.path.join(path, 'enums.h'), 'w')
+        f.write("#pragma once\n")
         for enum in mdm.enums:
             f.write(enum.emit())
         f.close()
