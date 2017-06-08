@@ -16,7 +16,7 @@ typedef struct {
 
 } Struct2;
 size_t lmcp_packsize_Struct2 (Struct2* i);
-void lmcp_init_Struct2 (Struct2** i);
 size_t lmcp_unpack_Struct2(uint8_t* buf, Struct2* outp);
-void lmcp_free_Struct2(Struct2* i);
 size_t lmcp_pack_Struct2(uint8_t* buf, Struct2* i);
+void lmcp_init_Struct2 (Struct2** i);
+void lmcp_free_Struct2(Struct2* i);
