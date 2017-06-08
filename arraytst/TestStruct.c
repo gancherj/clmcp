@@ -4,20 +4,14 @@
 #include "common/struct_defines.h"
 #include "common/conv.h"
 #include "TestStruct.h"
-size_t lmcp_packsize_TestStruct (TestStruct* i) {
-    size_t out = 0;
-    out += 2;
+size_t lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i) {
+    if (i == NULL) return 0;
+    uint8_t* outb = buf;
+    outb += lmcp_pack_uint16_t(outb, i->tstfield_ai.length);
     for (uint32_t index = 0; index < i->tstfield_ai.length; index++) {
-        out += sizeof(uint32_t);
+        outb += lmcp_pack_uint32_t(outb, i->tstfield[index]);
     }
-    return out;
-}
-void lmcp_init_TestStruct (TestStruct** i) {
-    (*i) = malloc(sizeof(TestStruct*));
-    *(*i) = (const TestStruct) {
-        0
-    };
-    ((lmcp_object*)(*i)) -> type = 1;
+    return (outb - buf);
 }
 size_t lmcp_unpack_TestStruct(uint8_t* buf, TestStruct* outp) {
     TestStruct* out = outp;
@@ -45,12 +39,18 @@ void lmcp_free_TestStruct(TestStruct* out) {
     }
     free(out);
 }
-size_t lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i) {
-    if (i == NULL) return 0;
-    uint8_t* outb = buf;
-    outb += lmcp_pack_uint16_t(outb, i->tstfield_ai.length);
+size_t lmcp_packsize_TestStruct (TestStruct* i) {
+    size_t out = 0;
+    out += 2;
     for (uint32_t index = 0; index < i->tstfield_ai.length; index++) {
-        outb += lmcp_pack_uint32_t(outb, i->tstfield[index]);
+        out += sizeof(uint32_t);
     }
-    return (outb - buf);
+    return out;
+}
+void lmcp_init_TestStruct (TestStruct** i) {
+    (*i) = malloc(sizeof(TestStruct));
+    *(*i) = (const TestStruct) {
+        0
+    };
+    ((lmcp_object*)(*i)) -> type = 1;
 }
