@@ -13,6 +13,13 @@ size_t lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i) {
     }
     return (outb - buf);
 }
+void lmcp_init_TestStruct (TestStruct** i) {
+    (*i) = malloc(sizeof(TestStruct));
+    *(*i) = (const TestStruct) {
+        0
+    };
+    ((lmcp_object*)(*i)) -> type = 1;
+}
 size_t lmcp_unpack_TestStruct(uint8_t* buf, TestStruct* outp) {
     TestStruct* out = outp;
     uint8_t* inb = buf;
@@ -46,11 +53,4 @@ size_t lmcp_packsize_TestStruct (TestStruct* i) {
         out += sizeof(uint32_t);
     }
     return out;
-}
-void lmcp_init_TestStruct (TestStruct** i) {
-    (*i) = malloc(sizeof(TestStruct));
-    *(*i) = (const TestStruct) {
-        0
-    };
-    ((lmcp_object*)(*i)) -> type = 1;
 }

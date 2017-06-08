@@ -8,21 +8,17 @@ TestStruct* g(uint32_t* i, uint32_t size) {
     ti->tstfield = malloc(sizeof(uint32_t) * size);
     ti->tstfield_ai.length = size;
     memcpy(ti->tstfield, i, sizeof(uint32_t) * size);
-    for (int i = 0; i < 5; i++)
-        printf("%d\n", ti->tstfield[i]);
 
 
-    uint8_t* buf = malloc(lmcp_packsize((lmcp_object*)ti));
-    lmcp_pack(buf, (lmcp_object*)ti);
+    uint8_t* buf = malloc(lmcp_packsize_TestStruct(ti));
+    lmcp_pack_TestStruct(buf, ti);
 
     TestStruct *to;
-
-    lmcp_unpack(buf, (lmcp_object**)&to);
-    for (int i = 0; i < 5; i++)
-        printf("%d\n", to->tstfield[i]);
+    lmcp_init_TestStruct(&to);
+    lmcp_unpack_TestStruct(buf, to);
 
     free(buf);
-    lmcp_free((lmcp_object*)ti);
+    lmcp_free_TestStruct(ti);
     return to;
 }
 

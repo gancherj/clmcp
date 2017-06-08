@@ -1,8 +1,8 @@
 l <- llvm_load_module "a.bc";
-xs <- fresh_symbolic "is" {| [10][32] |};
-let allocs = [("i", 10)];
-let ins = [("*i", {{ xs }}, 10), ("size", {{ (10: [32]) }}, 1)];
-let outs = [("*return", 10)];
+xs <- fresh_symbolic "is" {| [5][32] |};
+let allocs = [("i", 5)];
+let ins = [("*i", {{ xs }}, 5), ("size", {{ (5: [32]) }}, 1)];
+let outs = [("*return", 5)];
 t <- llvm_symexec l "f" allocs ins outs true;
 let t' = abstract_symbolic t;
-prove_print abc {{\x -> x == t' x}};
+prove_print abc {{\x -> x == t' x (1 : [64])}};
