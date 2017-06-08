@@ -337,7 +337,7 @@ def emit_free(struct):
         else:
             header += "if (out->"+field.name+" != NULL) { \n"
             if field.kind == 'base' or field.kind == 'enum':
-                header += "free (out->"+field.name+"); \n"
+                pass
             else:
                 header += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
                 header += emit_free_substruct(struct, field.name+"[index]", field.typeinfo.typename)
