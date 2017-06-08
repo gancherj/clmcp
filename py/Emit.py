@@ -158,7 +158,7 @@ Emits.toplevel_headers['unpack'] = "size_t lmcp_unpack(uint8_t* buf, lmcp_object
 
 def emit_init(struct):
     header = "void lmcp_init_"+struct.name+" ("+struct.name+"** i) { \n"
-    header += "(*i) = malloc(sizeof("+struct.name+"*));\n"
+    header += "(*i) = malloc(sizeof("+struct.name+"));\n"
     header += "*(*i) = (const "+struct.name+"){0};\n" 
     #if struct.parent != 'lmcp_object': if needed for something
     #    header += "out += lmcp_init_"+struct.parent+" (&i->super); \n"
