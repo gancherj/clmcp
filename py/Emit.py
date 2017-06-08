@@ -89,7 +89,7 @@ class Emits:
 
 def emit_toplevel_packsize(mdm):
     s = "uint32_t lmcp_packsize(lmcp_object* o) { \n"
-    cases = {struct.name : "return lmcp_packsize_"+struct.name+"(("+struct.name+"*)o);\n" for struct in mdm.structs}
+    cases = {struct.name : "return 15 + lmcp_packsize_"+struct.name+"(("+struct.name+"*)o);\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return 0;")
     s += "} \n"
     return s
@@ -229,7 +229,7 @@ def emit_pack_substruct(field, fieldname, typename):
 
 def emit_structpack(struct): 
     header = "size_t lmcp_pack_"+struct.name+"(uint8_t* buf, "+struct.name+"* i) { \n"
-    header += "if (i == NULL) return; \n"
+    header += "if (i == NULL) return 0; \n"
     header += "uint8_t* outb = buf;\n"
     if struct.parent != 'lmcp_object':
         header += "outb += lmcp_pack_" + struct.parent +"(outb, &(i->super));\n"
