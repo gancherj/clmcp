@@ -1,23 +1,22 @@
-#include "Struct2.h"
+#include "lmcp.h"
 #include <stdio.h>
 
 int main(int argc, char** argv) {
 
-
-    FILE* f = fopen(argv[1], "rb");
-    fseek(f, 0, SEEK_END);
-    size_t fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    uint8_t* buf = malloc(fsize);
-    fread(buf, 1, fsize, f);
-    fclose(f);
-
-
     Struct2 *s;
-    lmcp_unpack_Struct2(buf, &s);
+    lmcp_init_Struct2(&s);
+    s->field2 = malloc(sizeof(Struct1));
+    s->field2->field1 = 42;
 
-    printf("%d\n", s->field2->field1);
+    uint8_t* buf = malloc(lmcp_packsize((lmcp_object*)s));
+    lmcp_pack(buf, (lmcp_object*) s);
 
-    lmcp_free_Struct2(s);
+    Struct2 *s2;
+    lmcp_unpack(buf, (lmcp_object**)&s2);
 
+    printf("%d\n", s2->field2->field1);
+
+    lmcp_free((lmcp_object*)s);
+    lmcp_free((lmcp_object*)s2);
+    free(buf);
 }

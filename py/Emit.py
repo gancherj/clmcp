@@ -270,7 +270,8 @@ def emit_unpack_substruct(struct, fieldname, typename):
     header += "memcpy(seriesname, inb, 8); inb += 8; \n"
     header += "inb += lmcp_unpack_uint32_t(inb, &objtype);  \n"
     header += "inb += lmcp_unpack_uint16_t(inb, &objseries);  \n"
-    header += "inb += lmcp_unpack_"+typename+"(inb, &(out->"+fieldname+")); \n"
+    header += "lmcp_init_"+typename+"(&(out->"+fieldname+"));\n"
+    header += "inb += lmcp_unpack_"+typename+"(inb, (out->"+fieldname+")); \n"
     header += "}\n"
     return header
 
