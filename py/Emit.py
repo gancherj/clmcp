@@ -24,7 +24,7 @@ class Emits:
 #include <inttypes.h>
 #include <string.h>
 #include "common/struct_defines.h"
-#include "common/conv.h"
+#include "common/convnofloat.h"
 '''
         if struct.parent != 'lmcp_object':
             s += '#include \"'+struct.parent+'.h\"\n'
