@@ -133,26 +133,29 @@ Emits.toplevel_methods['free'] = emit_toplevel_free
 Emits.toplevel_headers['free'] = "void lmcp_free(lmcp_object* o);\n"
 
 def emit_toplevel_unpack(mdm):
-    s = "size_t lmcp_unpack(uint8_t* buf, lmcp_object **o) {\n"
+    s = "void lmcp_unpack(uint8_t* buf, size_t size, lmcp_object **o) {\n"
+    s += "size_t* size_remain = &size;\n"
     s += "uint8_t* inb = buf; \n"
     s += "uint32_t tmp; uint16_t tmp16; \n"
     s += "uint8_t isnull; \n"
     s += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
-    s +=  "inb += lmcp_unpack_uint8_t(inb, &isnull); \n"
+    s +=  "lmcp_unpack_uint8_t(&inb, size_remain, &isnull); \n"
+    s += "if (inb == NULL) { *o = NULL; return; } \n"
     s += "if (isnull == 0) { \n"
-    s += "return 1; \n"
+    s += "*o = NULL; // todo different behavior here? \n"
+    s += "return; \n"
     s += "} else { \n"
-    s += "memcpy(seriesname, inb, 8); inb += 8; \n"
-    s += "inb += lmcp_unpack_uint32_t(inb, &objtype);  \n"
-    s += "inb += lmcp_unpack_uint16_t(inb, &objseries);  \n"
-    cases = {struct.name : "lmcp_init_"+struct.name+"(("+struct.name+"**)o); \n return 15 + lmcp_unpack_"+struct.name+"(inb, ("+struct.name+"*)(*o));\n" for struct in mdm.structs}
-    s += Emits.emit_struct_switch(mdm, cases, 'objtype', "return 15;")
+    s += "lmcp_unpack_8byte(&inb, size_remain, seriesname); \n"
+    s += "lmcp_unpack_uint32_t(&inb, size_remain, &objtype);  \n"
+    s += "lmcp_unpack_uint16_t(&inb, size_remain, &objseries);  \n"
+    cases = {struct.name : "lmcp_init_"+struct.name+"(("+struct.name+"**)o); \n lmcp_unpack_"+struct.name+"(&inb, size_remain, ("+struct.name+"*)(*o));\n" for struct in mdm.structs}
+    s += Emits.emit_struct_switch(mdm, cases, 'objtype', "return;")
     s += "}\n"
     s += "} \n"
     return s
 
-#Emits.toplevel_methods['unpack'] = emit_toplevel_unpack
-#Emits.toplevel_headers['unpack'] = "size_t lmcp_unpack(uint8_t* buf, lmcp_object **o);\n"
+Emits.toplevel_methods['unpack'] = emit_toplevel_unpack
+Emits.toplevel_headers['unpack'] = "void lmcp_unpack(uint8_t* buf, size_t size, lmcp_object **o);\n"
 
 
 
