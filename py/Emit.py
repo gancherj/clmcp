@@ -4,6 +4,8 @@ from MDM import *
 # emit_structpack: structinfo -> string
 # emit_structunpack: structinfo -> string
 
+# inb += unpack(inb, &out) -> inb = unpack(inb, outb, size, &out)
+# unpack(uint8_t **inb, size_remain, out): if (size_remain < amount to read) or inb == NULL then return NULL else do the unpack; increment inb
 
 class Emits:
     struct_methods = {}
@@ -24,7 +26,7 @@ class Emits:
 #include <inttypes.h>
 #include <string.h>
 #include "common/struct_defines.h"
-#include "common/convnofloat.h"
+#include "common/conv.h"
 '''
         if struct.parent != 'lmcp_object':
             s += '#include \"'+struct.parent+'.h\"\n'
@@ -149,8 +151,8 @@ def emit_toplevel_unpack(mdm):
     s += "} \n"
     return s
 
-Emits.toplevel_methods['unpack'] = emit_toplevel_unpack
-Emits.toplevel_headers['unpack'] = "size_t lmcp_unpack(uint8_t* buf, lmcp_object **o);\n"
+#Emits.toplevel_methods['unpack'] = emit_toplevel_unpack
+#Emits.toplevel_headers['unpack'] = "size_t lmcp_unpack(uint8_t* buf, lmcp_object **o);\n"
 
 
 
@@ -263,60 +265,62 @@ Emits.struct_methods['pack'] = emit_structpack
 Emits.struct_headers['pack'] = emit_structpack_header
 
 def emit_unpack_substruct(struct, fieldname, typename):
-    header =  "inb += lmcp_unpack_uint8_t(inb, &isnull); \n"
-    header += "if (isnull == 0) { \n"
+    header =  "lmcp_unpack_uint8_t(inb, size_remain, &isnull); \n"
+    header += "if (isnull == 0 && inb != NULL) { \n"
     header += "out->"+fieldname+" = NULL; \n"
-    header += "} else { \n"
-    header += "memcpy(seriesname, inb, 8); inb += 8; \n"
-    header += "inb += lmcp_unpack_uint32_t(inb, &objtype);  \n"
-    header += "inb += lmcp_unpack_uint16_t(inb, &objseries);  \n"
+    header += "} else if (inb != NULL) { \n"
+    header += "lmcp_unpack_8byte(inb, size_remain, seriesname); \n"
+    header += "lmcp_unpack_uint32_t(inb, size_remain, &objtype);  \n"
+    header += "lmcp_unpack_uint16_t(inb, size_remain, &objseries);  \n"
     header += "lmcp_init_"+typename+"(&(out->"+fieldname+"));\n"
-    header += "inb += lmcp_unpack_"+typename+"(inb, (out->"+fieldname+")); \n"
+    header += "lmcp_unpack_"+typename+"(inb, size_remain, (out->"+fieldname+")); \n"
     header += "}\n"
     return header
 
 
 def emit_structunpack(struct):
-    header = "size_t lmcp_unpack_"+struct.name+"(uint8_t* buf, " + struct.name + "* outp) { \n"
-    header += struct.name+"* out = outp;\n"
-    header += "uint8_t* inb = buf; \n"
-    header += "uint32_t tmp; uint16_t tmp16; \n"
-    header += "uint8_t isnull; \n"
-    header += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
+    h = "void lmcp_unpack_"+struct.name+"(uint8_t** inb, size_t *size_remain, " + struct.name + "* outp) { \n"
+    h += "if (inb == NULL || *inb == NULL) { *inb = NULL; return; }\n"
+    h += "if (size_remain == NULL || *size_remain == 0) {*inb = NULL; return;} \n" 
+    h += struct.name+"* out = outp;\n"
+    h += "uint32_t tmp; uint16_t tmp16; \n"
+    h += "uint8_t isnull; \n"
+    h += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
     if struct.parent != 'lmcp_object':
-        header += "inb += lmcp_unpack_"+struct.parent+"(inb, &(out->super));\n"
+        h += "lmcp_unpack_"+struct.parent+"(inb, size_remain, &(out->super));\n"
     for field in struct.fields:
         if not field.typeinfo.isarray:
             if field.kind == 'base':
-                header += "inb += lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, &(out->" + field.name+"));\n"
+                h += "lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, size_remain, &(out->" + field.name+"));\n"
             elif field.kind == 'enum':
-                header += "inb += lmcp_unpack_int32_t(inb, (int*) &(out->"+field.name+"));\n"
+                h += "lmcp_unpack_int32_t(inb, size_remain, (int*) &(out->"+field.name+"));\n"
             elif field.kind == 'struct':
-                header += emit_unpack_substruct(struct, field.name, field.typeinfo.typename)
+                h += emit_unpack_substruct(struct, field.name, field.typeinfo.typename)
         else:
             if field.typeinfo.islargearray:
-                header += "inb += lmcp_unpack_uint32_t(inb, &tmp);\n"
+                h += "lmcp_unpack_uint32_t(inb, size_remain, &tmp);\n"
             else:
-                header += "inb += lmcp_unpack_uint16_t(inb, &tmp16); tmp = tmp16;\n"
+                h += "lmcp_unpack_uint16_t(inb, size_remain, &tmp16); tmp = tmp16;\n"
             if field.kind == 'base':
-                header += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*) * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*) * tmp);\n"
             elif field.kind == 'enum':
-                header += "(out)->"+field.name+" = malloc(sizeof(int32_t*) * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof(int32_t*) * tmp);\n"
             elif field.kind == 'struct':
-                header += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+"*) * tmp);\n"
-            header += "out->"+field.name+"_ai.length = tmp;\n"
-            header += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
+                h += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+"*) * tmp);\n"
+            h += "if (out->"+field.name+"==0) { *inb = NULL; return; }\n"
+            h += "out->"+field.name+"_ai.length = tmp;\n"
+            h += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
             if field.kind == 'base':
-                header += "inb += lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, &out->" + field.name+"[index]);\n"
+                h += "lmcp_unpack_"+TypeInfo.basetypes[field.typeinfo.typename]+"(inb, size_remain, &out->" + field.name+"[index]);\n"
             elif field.kind == 'enum':
-                header += "inb += lmcp_unpack_int32_t(inb, (int*) &out->"+field.name+"[index]);\n"
+                h += "lmcp_unpack_int32_t(inb, size_remain, (int*) &out->"+field.name+"[index]);\n"
             elif field.kind == 'struct':
-                header += emit_unpack_substruct(struct, field.name + "[index]", field.typeinfo.typename)
-            header += "}\n"
-    return header + "return (inb - buf); }\n"
+                h += emit_unpack_substruct(struct, field.name + "[index]", field.typeinfo.typename)
+            h += "}\n"
+    return h + " }\n"
 
 def emit_structunpack_header(struct):
-    return "size_t lmcp_unpack_"+struct.name+"(uint8_t* buf, " + struct.name + "* outp);\n"
+    return "void lmcp_unpack_"+struct.name+"(uint8_t** buf, size_t *size_remain," + struct.name + "* outp);\n"
 
 Emits.struct_methods['unpack'] = emit_structunpack
 Emits.struct_headers['unpack'] = emit_structunpack_header
