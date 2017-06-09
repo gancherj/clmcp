@@ -174,6 +174,13 @@ def emit_toplevel_processmsg(mdm):
 Emits.toplevel_methods['processmsg'] = emit_toplevel_processmsg
 Emits.toplevel_headers['processmsg'] = "void lmcp_process_msg(uint8_t** inb, size_t size, lmcp_object **o);\n"
 
+def emit_toplevel_msgsize(mdm):
+    s = "uint32_t lmcp_msgsize(lmcp_object* o) { return 8 + lmcp_packsize(o); }\n"
+    return s
+
+Emits.toplevel_methods['msgsize'] = emit_toplevel_msgsize
+Emits.toplevel_headers['msgsize'] = "uint32_t lmcp_msgsize(lmcp_object* o);\n"
+
 def emit_toplevel_makemsg(mdm):
     s = "void lmcp_make_msg(uint8_t* buf, lmcp_object* o) { \n"
     s += "buf[0] = 'L'; buf[1] = 'M'; buf[2] = 'C'; buf[3] = 'P'; \n"
