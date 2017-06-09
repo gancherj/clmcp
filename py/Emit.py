@@ -73,6 +73,7 @@ class Emits:
     @staticmethod
     def emit_toplevel_c(mdm):
         s = "#include \"common/struct_defines.h\"\n"
+        s += '#include \"lmcp.h\"\n'
         for struct in mdm.structs:
             s += '#include \"'+struct.name+'.h\"\n'
         for mname in Emits.toplevel_methods:
@@ -101,19 +102,16 @@ Emits.toplevel_headers['packsize'] = "uint32_t lmcp_packsize(lmcp_object* o);\n"
 
 def emit_top_pack_struct(struct):
     header = ""
-    header += "if (o==NULL) { \n"
-    header += "outb += lmcp_pack_uint8_t(outb, 0); return 1; \n"
-    header += "} else { \n"
     header += "outb += lmcp_pack_uint8_t(outb, 1);  \n"
     header += "memcpy(outb, \""+struct.seriesname+"\", 8); outb += 8; \n"
     header += "outb += lmcp_pack_uint32_t(outb, " + struct.id+"); \n"
     header += "outb += lmcp_pack_uint16_t(outb, " + struct.version+"); \n"
-    header += "}\n"
     return header
 
 def emit_toplevel_pack(mdm):
     s = "uint32_t lmcp_pack(uint8_t* buf, lmcp_object* o) { \n"
     s += "uint8_t* outb = buf; \n"
+    s += "if (o == NULL) { outb += lmcp_pack_uint8_t(outb, 0); return 1;\n}"
     cases = {struct.name : emit_top_pack_struct(struct) + "return 15 + lmcp_pack_"+struct.name+"(outb, ("+struct.name+"*)o);\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return 0;")
     s += "} \n"
@@ -124,6 +122,7 @@ Emits.toplevel_headers['pack'] = "uint32_t lmcp_pack(uint8_t* buf, lmcp_object* 
 
 def emit_toplevel_free(mdm):
     s = "void lmcp_free(lmcp_object *o) { \n"
+    s += "if (o == NULL) {return; }\n"
     cases = {struct.name : "lmcp_free_"+struct.name+"(("+struct.name+"*)o);\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return;")
     s += "} \n"
@@ -134,6 +133,7 @@ Emits.toplevel_headers['free'] = "void lmcp_free(lmcp_object* o);\n"
 
 def emit_toplevel_unpack(mdm):
     s = "void lmcp_unpack(uint8_t** inb, size_t size, lmcp_object **o) {\n"
+    s += "if (o == NULL) return;\n"
     s += "size_t* size_remain = &size;\n"
     s += "uint32_t tmp; uint16_t tmp16; \n"
     s += "uint8_t isnull; \n"
@@ -157,11 +157,37 @@ Emits.toplevel_methods['unpack'] = emit_toplevel_unpack
 Emits.toplevel_headers['unpack'] = "void lmcp_unpack(uint8_t** inb, size_t size, lmcp_object **o);\n"
 
 
+def emit_toplevel_processmsg(mdm):
+    s = "void lmcp_process_msg(uint8_t** inb, size_t size, lmcp_object **o) {\n"
+    s += "if (size < 8) {return;}\n"
+    s += "if (inb == NULL || *inb == NULL) { *o = NULL; return; } \n"
+    s += "if ((*inb)[0] != 'L' || (*inb)[1] != 'M' || (*inb)[2] != 'C' || (*inb)[3] != 'P') { return; } \n"
+    s += "*inb += 4;\n"
+    s += "size_t s = 4;\n"
+    s += "uint32_t msglen;\n"
+    s += "lmcp_unpack_uint32_t(inb, &s, &msglen);\n"
+    s += "if (size < (msglen + 8)) { *o = NULL; *inb = NULL; return;} \n"
+    s += "lmcp_unpack(inb, msglen, o);\n"
+    s += "}\n"
+    return s
 
+Emits.toplevel_methods['processmsg'] = emit_toplevel_processmsg
+Emits.toplevel_headers['processmsg'] = "void lmcp_process_msg(uint8_t** inb, size_t size, lmcp_object **o);\n"
 
+def emit_toplevel_makemsg(mdm):
+    s = "void lmcp_make_msg(uint8_t* buf, lmcp_object* o) { \n"
+    s += "buf[0] = 'L'; buf[1] = 'M'; buf[2] = 'C'; buf[3] = 'P'; \n"
+    s += "lmcp_pack_uint32_t(buf+4, lmcp_packsize(o));\n"
+    s += "lmcp_pack(buf + 8, o);\n"
+    s += "}\n"
+    return s
+
+Emits.toplevel_methods['makemsg'] = emit_toplevel_makemsg
+Emits.toplevel_headers['makemsg'] = "void lmcp_make_msg(uint8_t* buf, lmcp_object *o);\n"
 
 def emit_init(struct):
     header = "void lmcp_init_"+struct.name+" ("+struct.name+"** i) { \n"
+    header += "if (i == NULL) return;\n"
     header += "(*i) = malloc(sizeof("+struct.name+"));\n"
     header += "*(*i) = (const "+struct.name+"){0};\n" 
     #if struct.parent != 'lmcp_object': if needed for something

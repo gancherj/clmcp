@@ -25,6 +25,23 @@ void lmcp_unpack_8byte (uint8_t** buf, size_t * size_remain, char* out) {
     *size_remain -= 8;
 }
 
+void lmcp_unpack_4byte (uint8_t** buf, size_t * size_remain, char* out) {
+    if (buf == NULL || *buf == NULL || size_remain == NULL) {
+        buf = NULL;
+        return;
+    }
+    if (*size_remain < 4) {
+        *buf = NULL;
+        return;
+    }
+    out[0] = (*buf)[0];
+    out[1] = (*buf)[1];
+    out[2] = (*buf)[2];
+    out[3] = (*buf)[3];
+    *buf += 4;
+    *size_remain -= 4;
+}
+
 size_t lmcp_pack_uint16_t (uint8_t* buf, uint16_t in) {
     *buf++ = in >> 8; *buf++ = in;
     return 2;

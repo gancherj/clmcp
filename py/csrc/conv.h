@@ -28,6 +28,7 @@ void lmcp_unpack_int32_t (uint8_t** buf, size_t * size_remain, int32_t* out) ;
 void lmcp_unpack_int64_t (uint8_t** buf, size_t * size_remain, int64_t* out) ;
 
 void lmcp_unpack_8byte (uint8_t** buf, size_t * size_remain, char* out);
+void lmcp_unpack_4byte (uint8_t** buf, size_t * size_remain, char* out);
 //
 
 size_t lmcp_pack_float(uint8_t* buf, float in) ;
