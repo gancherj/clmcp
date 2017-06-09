@@ -38,6 +38,8 @@ verification
 - SAW has a hard time with branching on raw data. maybe moving to a Hoare-style approach would make this easier?
 
 meeting
+===
+
 -- connection between properties about packsize & inputs to packing & unpacking
 
 -- proving things about invalid messages: error handling & formal specification of invalid behavior
@@ -45,7 +47,7 @@ meeting
 
 -- in saw: mutually recursive things are hard to symbolic simulate
 
--- proving properties about unpack without any restrictions 
+-- proving properties about unpack without any restrictions on the data
 
 "what do i say about data i do not have control over"
 
