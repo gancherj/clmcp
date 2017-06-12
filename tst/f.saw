@@ -1,0 +1,3 @@
+l <- llvm_load_module "t.bc";
+x <- fresh_symbolic "i" {| [32] |};
+llvm_symexec l "f" [] [("i", x, 1)] [("return", 1)] true;

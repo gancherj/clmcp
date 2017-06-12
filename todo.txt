@@ -1,21 +1,5 @@
 
-
-done:
-    - array / single field proofs
-    
-    - inheritance
-
-    - nested structs work
-
-    - init / free methods
-
-    - array proofs
-    
-    - uint proof
-
-todo : 
-
-   
+todo   
     - checksumming / checking magic numbers
 
 
@@ -24,16 +8,13 @@ verification
 
 - SAW can't handle the generic functions yet efficiently, since this branches on raw data.
 
-- SAW can't handle nested structs (including the super type).
-    - soln A: make everything pointers (except possibly lmcp_object).
-        - gets rid of type punning between higher levels; keeps inheritance structure. init function can still enforce that super types are not null. 
-    - solution: flatten out all inheritence
-        - gets rid of type punning? (maybe since super is a strict prefix, one can still type pun. the thing that might mess up is structure packing. is struct packing only dependant on prefix?) 
+- for nested structs, see nested.c in saw examples 
+
+
 
 - SAW can't do floats
     - verify float <-> int32 / double <-> int64 separately
 
-- can SAW compare structures for equality?
 
 - SAW has a hard time with branching on raw data. maybe moving to a Hoare-style approach would make this easier?
 
