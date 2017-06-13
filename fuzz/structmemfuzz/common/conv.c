@@ -76,7 +76,6 @@ size_t lmcp_unpack_int64_t (uint8_t* buf, int64_t* out) {
     *out = *(int64_t*)&j;
     return 8;
 }
-/*
 // macros for packing floats and doubles:
 #define pack754_32(f) (pack754((f), 32, 8))
 #define pack754_64(f) (pack754((f), 64, 11))
@@ -167,7 +166,7 @@ size_t lmcp_unpack_double(uint8_t* buf, double* out) {
     *out = (double) unpack754_64(p);
     return 8;
 } 
-*/
+
 size_t lmcp_pack_uint8_t(uint8_t* buf, uint8_t in) {
     *buf = in;
     return 1;

@@ -15,8 +15,9 @@ typedef struct {
     array_info tstfield_ai;
 
 } TestStruct;
-size_t lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i);
-size_t lmcp_unpack_TestStruct(uint8_t* buf, TestStruct* outp);
-void lmcp_free_TestStruct(TestStruct* i);
 size_t lmcp_packsize_TestStruct (TestStruct* i);
+size_t lmcp_pack_TestStruct_header(uint8_t* buf, TestStruct* i);
+void lmcp_free_TestStruct(TestStruct* i);
 void lmcp_init_TestStruct (TestStruct** i);
+void lmcp_unpack_TestStruct(uint8_t** buf, size_t *size_remain,TestStruct* outp);
+size_t lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i);

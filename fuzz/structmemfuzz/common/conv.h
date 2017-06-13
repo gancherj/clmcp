@@ -27,7 +27,7 @@ size_t lmcp_unpack_int16_t (uint8_t* buf, int16_t* out) ;
 size_t lmcp_unpack_int32_t (uint8_t* buf, int32_t* out) ;
 size_t lmcp_unpack_int64_t (uint8_t* buf, int64_t* out) ;
 //
-/*
+
 size_t lmcp_pack_float(uint8_t* buf, float in) ;
 
 size_t lmcp_unpack_float(uint8_t* buf, float* out) ;
@@ -35,7 +35,7 @@ size_t lmcp_unpack_float(uint8_t* buf, float* out) ;
 size_t lmcp_pack_double(uint8_t* buf, double in) ;
 
 size_t lmcp_unpack_double(uint8_t* buf, double* out) ;
-*/
+
 size_t lmcp_pack_uint8_t(uint8_t* buf, uint8_t in) ;
 
 size_t lmcp_unpack_uint8_t(uint8_t* buf, uint8_t* out) ;

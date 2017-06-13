@@ -14,8 +14,9 @@ typedef struct {
     uint32_t field1;
 
 } Struct1;
-size_t lmcp_unpack_Struct1(uint8_t* buf, Struct1* outp);
-size_t lmcp_pack_Struct1(uint8_t* buf, Struct1* i);
-void lmcp_init_Struct1 (Struct1** i);
 size_t lmcp_packsize_Struct1 (Struct1* i);
+size_t lmcp_pack_Struct1_header(uint8_t* buf, Struct1* i);
 void lmcp_free_Struct1(Struct1* i);
+void lmcp_init_Struct1 (Struct1** i);
+void lmcp_unpack_Struct1(uint8_t** buf, size_t *size_remain,Struct1* outp);
+size_t lmcp_pack_Struct1(uint8_t* buf, Struct1* i);

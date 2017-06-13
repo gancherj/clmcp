@@ -15,7 +15,8 @@ int main() {
     lmcp_pack(buf, (lmcp_object*)s2);
 
     Struct2 *s;
-    lmcp_unpack(buf, (lmcp_object**)&s);
+    uint8_t* inb = buf;
+    lmcp_unpack(&inb, lmcp_packsize((lmcp_object*)s2), (lmcp_object**)&s);
 
     for (int i =0; i < 5; i++ )
         printf("%d\n", s->field2[i]->field1);

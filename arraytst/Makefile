@@ -1,6 +1,10 @@
-all:
+run:
+	clang *.c common/conv.c -g
+
+
+saw:
 	clang -emit-llvm -c *.c common/*.c
-	llvm-link *.bc -o a.bc
+	llvm-link-3.4 *.bc -o a.bc
 
 clean:
 	rm *.bc common/*.bc a.out
