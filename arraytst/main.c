@@ -19,7 +19,7 @@ TestStruct* gstatic(uint32_t* i, uint32_t size) {
     lmcp_unpack_TestStruct(&inb, &packsize, to);
 
     free(buf);
-    lmcp_free_TestStruct(ti);
+    //lmcp_free_TestStruct(ti);
     return to;
 }
 
@@ -27,7 +27,7 @@ uint32_t* fstatic(uint32_t* i, uint32_t size) {
     TestStruct* to = gstatic(i, size);
     uint32_t* arr = malloc(sizeof(uint32_t) * size);
     memcpy(arr, to->tstfield, sizeof(uint32_t) * size);
-    lmcp_free((lmcp_object*)to);
+    lmcp_free_TestStruct(to);
     return arr;
 
 }
