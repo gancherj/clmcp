@@ -154,7 +154,9 @@ Emits.toplevel_headers['unpack'] = "void lmcp_unpack(uint8_t** inb, size_t size,
 def emit_toplevel_processmsg(mdm):
     s = "void lmcp_process_msg(uint8_t** inb, size_t size, lmcp_object **o) {\n"
     s += "if (size < 8) {return;}\n"
+    s += checkmem_begin
     s += "if (inb == NULL || *inb == NULL) { *o = NULL; return; } \n"
+    s += checkmem_end
     s += "if ((*inb)[0] != 'L' || (*inb)[1] != 'M' || (*inb)[2] != 'C' || (*inb)[3] != 'P') { return; } \n"
     s += "*inb += 4;\n"
     s += "size_t s = 4;\n"
@@ -248,13 +250,14 @@ Emits.struct_headers['packsize'] = emit_sizecalc_header
 def emit_pack_struct_header(struct):
     s = "size_t lmcp_pack_"+struct.name+"_header(uint8_t* buf, "+struct.name+"* i) { \n"
     s += "uint8_t* outb = buf;\n"
+    s += checkmem_begin
     s += "if (i == NULL) { lmcp_pack_uint8_t(outb, 0); return 1;}"
-    s += "else { outb += lmcp_pack_uint8_t(outb, 1); \n"
+    s += checkmem_end
+    s += "outb += lmcp_pack_uint8_t(outb, 1); \n"
     s += "memcpy(outb, \""+struct.seriesname+"\", 8); outb += 8; \n"
     s += "outb += lmcp_pack_uint32_t(outb, " + struct.id+"); \n"
     s += "outb += lmcp_pack_uint16_t(outb, " + struct.version+"); \n"
     s += "return 15;\n"
-    s += "}\n"
     s += "}\n"
     return s
 
