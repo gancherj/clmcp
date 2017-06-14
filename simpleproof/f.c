@@ -1,30 +1,23 @@
+#define CHECK_MEM
 #include <inttypes.h>
 #include <stdio.h>
 #include "lmcp.h"
 
-uint32_t f(uint32_t i) {
-    TestStruct* ts;
-    lmcp_init_TestStruct(&ts);
-    ts->tstfield = i;
 
 
-    TestStruct* ts2;
-    size_t packsize = lmcp_packsize_TestStruct(ts);
-    uint8_t* buf = malloc(packsize);
+uint32_t serial(uint32_t i, uint8_t* buf, size_t size) {
+    TestStruct* t;
+    lmcp_init_TestStruct(&t);
+    t->tstfield = i;
 
-    lmcp_pack_TestStruct(buf, ts);
+    lmcp_pack_TestStruct(buf, t);
+    lmcp_free_TestStruct(t);
 
+    TestStruct* t2;
+    lmcp_init_TestStruct(&t2);
     uint8_t* inb = buf;
-    lmcp_init_TestStruct(&ts2);
-    lmcp_unpack_TestStruct(&inb, &packsize, ts2);
-    uint32_t out = ts2->tstfield;
-
-    lmcp_free_TestStruct(ts);
-    lmcp_free_TestStruct(ts2);
-    free(buf);
-
-    return out;
-
+    lmcp_unpack_TestStruct(&inb, &size, t2);
+    return t2->tstfield;
 }
 
-
+int main() {}

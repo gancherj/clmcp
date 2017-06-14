@@ -43,10 +43,14 @@ void lmcp_process_msg(uint8_t** inb, size_t size, lmcp_object **o) {
     if (size < 8) {
         return;
     }
+
+#ifdef CHECK_MEM
     if (inb == NULL || *inb == NULL) {
         *o = NULL;
         return;
     }
+
+#endif
     if ((*inb)[0] != 'L' || (*inb)[1] != 'M' || (*inb)[2] != 'C' || (*inb)[3] != 'P') {
         return;
     }
