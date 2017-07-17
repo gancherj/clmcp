@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "conv.h"
 // from beej
 
 void lmcp_unpack_8byte (uint8_t** buf, size_t * size_remain, char* out) {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -14,7 +14,6 @@ void lmcp_unpack_8byte (uint8_t** buf, size_t * size_remain, char* out) {
         *buf = NULL;
         return;
     }
-    #endif
     out[0] = (*buf)[0];
     out[1] = (*buf)[1];
     out[2] = (*buf)[2];
@@ -28,7 +27,6 @@ void lmcp_unpack_8byte (uint8_t** buf, size_t * size_remain, char* out) {
 }
 
 void lmcp_unpack_4byte (uint8_t** buf, size_t * size_remain, char* out) {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -37,7 +35,6 @@ void lmcp_unpack_4byte (uint8_t** buf, size_t * size_remain, char* out) {
         *buf = NULL;
         return;
     }
-    #endif
     out[0] = (*buf)[0];
     out[1] = (*buf)[1];
     out[2] = (*buf)[2];
@@ -53,7 +50,6 @@ size_t lmcp_pack_uint16_t (uint8_t* buf, uint16_t in) {
 }
 
 void lmcp_unpack_uint16_t (uint8_t** buf, size_t *size_remain, uint16_t* out) {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -62,7 +58,6 @@ void lmcp_unpack_uint16_t (uint8_t** buf, size_t *size_remain, uint16_t* out) {
         *buf = NULL;
         return;
     }
-    #endif
     *out = ((*buf)[0] << 8) | (*buf)[1];
     *buf += 2;
     *size_remain -= 2;
@@ -70,7 +65,6 @@ void lmcp_unpack_uint16_t (uint8_t** buf, size_t *size_remain, uint16_t* out) {
 
 void lmcp_unpack_uint32_t (uint8_t **buf, size_t *size_remain, uint32_t* out)
 {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -79,7 +73,6 @@ void lmcp_unpack_uint32_t (uint8_t **buf, size_t *size_remain, uint32_t* out)
         *buf = NULL;
         return;
     }
-    #endif
 	*out = ((*buf)[0]<<24) | ((*buf)[1]<<16) | ((*buf)[2]<<8) | (*buf)[3];
     *buf += 4;
     *size_remain -= 4;
@@ -109,7 +102,6 @@ size_t lmcp_pack_uint64_t (uint8_t *buf, uint64_t i) {
 
 void lmcp_unpack_uint64_t (uint8_t **buf, size_t *size_remain, uint64_t* out)
 {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -118,7 +110,6 @@ void lmcp_unpack_uint64_t (uint8_t **buf, size_t *size_remain, uint64_t* out)
         *buf = NULL;
         return;
     }
-    #endif
 	*out = ((uint64_t)((*buf)[0])<<56) | ((uint64_t)((*buf)[1])<<48) | ((uint64_t)((*buf)[2])<<40) | ((uint64_t)((*buf)[3])<<32) | ((uint64_t)((*buf)[4])<<24) | ((uint64_t)((*buf)[5])<<16) | ((uint64_t)((*buf)[6])<<8) | ((uint64_t)((*buf)[7]));
     *buf += 8;
     *size_remain -= 8;
@@ -154,7 +145,7 @@ void lmcp_unpack_int64_t (uint8_t** buf, size_t *size_remain, int64_t* out) {
     if (buf != NULL && *buf != NULL)
     *out = *(int64_t*)&j;
 }
-/*
+// from beej guide
 // macros for packing floats and doubles:
 #define pack754_32(f) (pack754((f), 32, 8))
 #define pack754_64(f) (pack754((f), 64, 11))
@@ -245,14 +236,13 @@ void lmcp_unpack_double(uint8_t** buf, size_t* size_remain, double* out) {
     if (buf != NULL && *buf != NULL)
     *out = (double) unpack754_64(p);
 } 
-*/
+
 size_t lmcp_pack_uint8_t(uint8_t* buf, uint8_t in) {
     *buf = in;
     return 1;
 }
 
 void lmcp_unpack_uint8_t(uint8_t** buf, size_t *size_remain, uint8_t* out) {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -261,14 +251,12 @@ void lmcp_unpack_uint8_t(uint8_t** buf, size_t *size_remain, uint8_t* out) {
         buf = NULL;
         return;
     }
-    #endif
     *out = **buf;
     *buf += 1;
     *size_remain -= 1;
 }
 
 void lmcp_unpack_char(uint8_t** buf, size_t *size_remain, char* out) {
-    #ifdef CHECK_MEM
     if (buf == NULL || *buf == NULL || size_remain == NULL) {
         buf = NULL;
         return;
@@ -277,7 +265,6 @@ void lmcp_unpack_char(uint8_t** buf, size_t *size_remain, char* out) {
         buf = NULL;
         return;
     }
-    #endif
     *out = **buf;
     *buf += 1;
     *size_remain -= 1;
@@ -287,49 +274,45 @@ size_t lmcp_pack_char(uint8_t* buf, char in) {
     *buf = in;
     return 1;
 }
-/*
-uint16_t string_len(const char* in) {
-    uint16_t s = 0;
-    while (*in != '\0') {
-        s++;
-        in++;
-
-    }
-
-    return s;
-}
 
 
 size_t lmcp_pack_string(uint8_t* buf, char* in) {
-    uint16_t len = string_len(in);
+    uint16_t len = strlen(in) + 1;
     lmcp_pack_uint16_t(buf, len);
     buf += 2;
-    for (uint16_t i = 0; i < len; i++)
-        *buf++ = *in++;
+    strcpy((unsigned char*)buf, in);
     return len;
 }
 
-uint16_t lmcp_unpack_stringlen(uint8_t* buf) {
-    uint16_t len; lmcp_unpack_uint16_t(buf, &len);
-    return len + 1;
+void lmcp_unpack_stringlen(uint8_t** buf, size_t* size_remain, uint16_t* out) {
+    lmcp_unpack_uint16_t(buf, size_remain, out);
+    if (out != NULL)
+        *out += 1;
 }
 
-void lmcp_unpack_string(uint8_t* buf, char* out, uint16_t len) {
-    char* outbuf = out;
+void lmcp_unpack_string(uint8_t** buf, size_t* size_remain, char* out, uint16_t len) {
+    if (buf == NULL || *buf == NULL || size_remain == NULL) {
+        buf = NULL;
+        return;
+    }
+    if (*size_remain < len) {
+        *buf = NULL;
+        return;
+    }
     for (uint16_t i = 0; i < len; i++)
-        *outbuf++ = *buf++;
+        out[i] = (*buf)[i];
+    *buf += len;
+    *size_remain -= len;
+
 }
-*/
 
 int lmcp_unpack_structheader(uint8_t** inb, size_t* size_remain, char* seriesname, uint32_t* objtype, uint16_t* objseries) {
     uint8_t isnull;
     lmcp_unpack_uint8_t(inb, size_remain, &isnull);
-    #ifdef CHECK_MEM
     if (inb == NULL || *inb == NULL || isnull == 0) {
         *inb = NULL;
         return 0;
     }
-#endif        
     lmcp_unpack_8byte(inb, size_remain, seriesname);
     lmcp_unpack_uint32_t(inb, size_remain, objtype);
     lmcp_unpack_uint16_t(inb, size_remain, objseries);

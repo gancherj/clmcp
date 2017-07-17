@@ -5,7 +5,7 @@ class TypeInfo:
     basetypes = {
         'byte': 'uint8_t',
         'char': 'char',
-        'bool': 'bool',
+        'bool': 'uint8_t',
         'int16': 'int16_t',
         'uint16': 'uint16_t',
         'int32': 'int32_t',
@@ -181,9 +181,9 @@ class EnumInfo:
         values = []
         for vn in self.values:
             if self.values[vn] is not None:
-                values += [vn +" = "+self.values[vn] + ","]
+                values += [self.name+"_"+vn +" = "+self.values[vn] + ","]
             else:
-                values += [vn + ","]
+                values += [self.name+"_"+vn + ","]
         
         return '\n'.join([
             enum_header]

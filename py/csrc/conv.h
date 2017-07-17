@@ -30,7 +30,6 @@ void lmcp_unpack_int64_t (uint8_t** buf, size_t * size_remain, int64_t* out) ;
 void lmcp_unpack_8byte (uint8_t** buf, size_t * size_remain, char* out);
 void lmcp_unpack_4byte (uint8_t** buf, size_t * size_remain, char* out);
 //
-/*
 size_t lmcp_pack_float(uint8_t* buf, float in) ;
 
 void lmcp_unpack_float(uint8_t** buf, size_t * size_remain, float* out) ;
@@ -38,7 +37,7 @@ void lmcp_unpack_float(uint8_t** buf, size_t * size_remain, float* out) ;
 size_t lmcp_pack_double(uint8_t* buf, double in) ;
 
 void lmcp_unpack_double(uint8_t** buf, size_t * size_remain, double* out) ;
-*/
+
 size_t lmcp_pack_uint8_t(uint8_t* buf, uint8_t in) ;
 
 void lmcp_unpack_uint8_t(uint8_t** buf, size_t * size_remain, uint8_t* out) ;
@@ -46,15 +45,12 @@ void lmcp_unpack_uint8_t(uint8_t** buf, size_t * size_remain, uint8_t* out) ;
 void lmcp_unpack_char(uint8_t** buf, size_t * size_remain, char* out) ;
 
 size_t lmcp_pack_char(uint8_t* buf, char in) ;
-/*
-uint16_t string_len(const char* in) ;
 
 
 size_t lmcp_pack_string(uint8_t* buf, char* in) ;
 
-uint16_t lmcp_unpack_stringlen(uint8_t* buf) ;
-void lmcp_unpack_string(uint8_t* buf, char* out, uint16_t len) ;
-*/
+void lmcp_unpack_stringlen(uint8_t** buf, size_t* size_remain, uint16_t* out); 
+void lmcp_unpack_string(uint8_t** buf, size_t* size_remain, char* out, uint16_t len); 
 
 
 int lmcp_unpack_structheader(uint8_t** inb, size_t* size_remain, char* seriesname, uint32_t* objtype, uint16_t* objseries);
