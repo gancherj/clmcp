@@ -49,7 +49,7 @@ class TypeInfo:
         self.islargearray = False 
 
         if underlying == "string" and self.isarray:
-            print("Arrays of strings not supported directly; put string in a struct and do array of struct")
+            print("ERROR: Arrays of strings not supported directly; put string in a struct and do array of struct")
         elif underlying == "string" and not self.isarray: # strings are arrays of chars
             self.isarray = True
             self.arraysize = "-1"
