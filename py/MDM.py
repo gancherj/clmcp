@@ -29,7 +29,7 @@ class TypeInfo:
         'string': 'char'}
 
     def __init__(self, typestr): #-1 and true -> varying array
-        underlying = re.search('[a-zA-Z]+[0-9]*', typestr).group(0)
+        underlying = re.search('[a-zA-Z]+[0-9]*[a-zA-Z]*', typestr).group(0)
         arrayparam = re.search('\[[0-9]*\]', typestr)
         if arrayparam is not None:
             arrayparam = arrayparam.group(0)
@@ -72,6 +72,7 @@ class FieldInfo:
         elif mdm.is_enum(self.typeinfo.typename):
             self.kind = 'enum'
         else:
+            print ("ERROR: weird kind: " + self.typeinfo.typename)
             self.kind = 'unknown'
 
         if self.kind == 'struct':
@@ -101,6 +102,8 @@ class FieldInfo:
             underlying = self.typeinfo.typename + "*"
         elif self.kind == 'enum':
             underlying = self.typeinfo.typename
+        else:
+            print ("ERROR: weird kind: " + self.kind)
         if self.typeinfo.isarray:
             underlying += "*"
         fieldstr += underlying + " " + self.name + ";\n"
@@ -228,6 +231,7 @@ class MDM:
         self.structs = [StructInfo(self, s) for s in structs]
         for i in range(len(self.structs)):
             self.structs[i].id = str(1+i)
+        for i in range(len(self.structs)):
             self.structs[i].fillkinds(self)
 
         self.seriesnamelong = struc.unpack(">Q", (str.encode(seriesname) + b'\0\0\0\0\0\0\0\0')[:8])
