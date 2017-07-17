@@ -7,6 +7,10 @@ from MDM import *
 # inb += unpack(inb, &out) -> inb = unpack(inb, outb, size, &out)
 # unpack(uint8_t **inb, size_remain, out): if (size_remain < amount to read) or inb == NULL then return NULL else do the unpack; increment inb
 
+
+checkmem_begin = "\n#ifdef CHECK_MEM\n"
+checkmem_end = "\n#endif\n"
+
 class Emits:
     struct_methods = {}
     struct_headers = {}
@@ -100,19 +104,11 @@ def emit_toplevel_packsize(mdm):
 Emits.toplevel_methods['packsize'] = emit_toplevel_packsize
 Emits.toplevel_headers['packsize'] = "uint32_t lmcp_packsize(lmcp_object* o);\n"
 
-def emit_top_pack_struct(struct):
-    header = ""
-    header += "outb += lmcp_pack_uint8_t(outb, 1);  \n"
-    header += "memcpy(outb, \""+struct.seriesname+"\", 8); outb += 8; \n"
-    header += "outb += lmcp_pack_uint32_t(outb, " + struct.id+"); \n"
-    header += "outb += lmcp_pack_uint16_t(outb, " + struct.version+"); \n"
-    return header
 
 def emit_toplevel_pack(mdm):
     s = "uint32_t lmcp_pack(uint8_t* buf, lmcp_object* o) { \n"
     s += "uint8_t* outb = buf; \n"
-    s += "if (o == NULL) { outb += lmcp_pack_uint8_t(outb, 0); return 1;\n}"
-    cases = {struct.name : emit_top_pack_struct(struct) + "return 15 + lmcp_pack_"+struct.name+"(outb, ("+struct.name+"*)o);\n" for struct in mdm.structs}
+    cases = {struct.name : "outb += lmcp_pack_"+struct.name+"_header(outb, ("+struct.name+"*)o); outb += lmcp_pack_"+struct.name+"(outb, ("+struct.name+"*)o); return (outb - buf);\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return 0;")
     s += "} \n"
     return s
@@ -122,7 +118,9 @@ Emits.toplevel_headers['pack'] = "uint32_t lmcp_pack(uint8_t* buf, lmcp_object* 
 
 def emit_toplevel_free(mdm):
     s = "void lmcp_free(lmcp_object *o) { \n"
+    s += checkmem_begin
     s += "if (o == NULL) {return; }\n"
+    s += checkmem_end
     cases = {struct.name : "lmcp_free_"+struct.name+"(("+struct.name+"*)o);\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return;")
     s += "} \n"
@@ -133,24 +131,20 @@ Emits.toplevel_headers['free'] = "void lmcp_free(lmcp_object* o);\n"
 
 def emit_toplevel_unpack(mdm):
     s = "void lmcp_unpack(uint8_t** inb, size_t size, lmcp_object **o) {\n"
+    s += checkmem_begin
     s += "if (o == NULL) return;\n"
+    s += checkmem_end
     s += "size_t* size_remain = &size;\n"
     s += "uint32_t tmp; uint16_t tmp16; \n"
-    s += "uint8_t isnull; \n"
+    s += "int isnull; \n"
     s += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
-    s +=  "lmcp_unpack_uint8_t(inb, size_remain, &isnull); \n"
-    s += "if (inb == NULL) { *o = NULL; return; } \n"
-    s += "if (isnull == 0) { \n"
-    s += "*o = NULL; // todo different behavior here? \n"
-    s += "return; \n"
-    s += "} else { \n"
-    s += "lmcp_unpack_8byte(inb, size_remain, seriesname); \n"
-    s += "lmcp_unpack_uint32_t(inb, size_remain, &objtype);  \n"
-    s += "lmcp_unpack_uint16_t(inb, size_remain, &objseries);  \n"
+    s += "isnull = lmcp_unpack_structheader(inb, size_remain, seriesname, &objtype, &objseries);\n"
+    s += checkmem_begin
+    s += "if (isnull == 0) { *o = NULL; return; }"
+    s += checkmem_end
     cases = {struct.name : "lmcp_init_"+struct.name+"(("+struct.name+"**)o); \n lmcp_unpack_"+struct.name+"(inb, size_remain, ("+struct.name+"*)(*o));\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'objtype', "return;")
     s += "}\n"
-    s += "} \n"
     return s
 
 Emits.toplevel_methods['unpack'] = emit_toplevel_unpack
@@ -160,7 +154,9 @@ Emits.toplevel_headers['unpack'] = "void lmcp_unpack(uint8_t** inb, size_t size,
 def emit_toplevel_processmsg(mdm):
     s = "void lmcp_process_msg(uint8_t** inb, size_t size, lmcp_object **o) {\n"
     s += "if (size < 8) {return;}\n"
+    s += checkmem_begin
     s += "if (inb == NULL || *inb == NULL) { *o = NULL; return; } \n"
+    s += checkmem_end
     s += "if ((*inb)[0] != 'L' || (*inb)[1] != 'M' || (*inb)[2] != 'C' || (*inb)[3] != 'P') { return; } \n"
     s += "*inb += 4;\n"
     s += "size_t s = 4;\n"
@@ -194,7 +190,9 @@ Emits.toplevel_headers['makemsg'] = "void lmcp_make_msg(uint8_t* buf, lmcp_objec
 
 def emit_init(struct):
     header = "void lmcp_init_"+struct.name+" ("+struct.name+"** i) { \n"
+    header += checkmem_begin
     header += "if (i == NULL) return;\n"
+    header += checkmem_end
     header += "(*i) = malloc(sizeof("+struct.name+"));\n"
     header += "*(*i) = (const "+struct.name+"){0};\n" 
     #if struct.parent != 'lmcp_object': if needed for something
@@ -249,6 +247,25 @@ def emit_sizecalc_header(struct):
 Emits.struct_methods['packsize'] = emit_sizecalc
 Emits.struct_headers['packsize'] = emit_sizecalc_header
 
+def emit_pack_struct_header(struct):
+    s = "size_t lmcp_pack_"+struct.name+"_header(uint8_t* buf, "+struct.name+"* i) { \n"
+    s += "uint8_t* outb = buf;\n"
+    s += checkmem_begin
+    s += "if (i == NULL) { lmcp_pack_uint8_t(outb, 0); return 1;}"
+    s += checkmem_end
+    s += "outb += lmcp_pack_uint8_t(outb, 1); \n"
+    s += "memcpy(outb, \""+struct.seriesname+"\", 8); outb += 8; \n"
+    s += "outb += lmcp_pack_uint32_t(outb, " + struct.id+"); \n"
+    s += "outb += lmcp_pack_uint16_t(outb, " + struct.version+"); \n"
+    s += "return 15;\n"
+    s += "}\n"
+    return s
+
+def emit_pack_struct_header_header(struct):
+    return "size_t lmcp_pack_"+struct.name+"_header(uint8_t* buf, "+struct.name+"* i);\n"
+
+Emits.struct_methods['packstructheader'] = emit_pack_struct_header
+Emits.struct_headers['packstructheader'] = emit_pack_struct_header_header
 
 def emit_pack_substruct(field, fieldname, typename):
     header = ""
@@ -264,9 +281,12 @@ def emit_pack_substruct(field, fieldname, typename):
     return header
 
 
+
 def emit_structpack(struct): 
     header = "size_t lmcp_pack_"+struct.name+"(uint8_t* buf, "+struct.name+"* i) { \n"
+    header += checkmem_begin
     header += "if (i == NULL) return 0; \n"
+    header += checkmem_end
     header += "uint8_t* outb = buf;\n"
     if struct.parent != 'lmcp_object':
         header += "outb += lmcp_pack_" + struct.parent +"(outb, &(i->super));\n"
@@ -315,8 +335,10 @@ def emit_unpack_substruct(struct, fieldname, typename):
 
 def emit_structunpack(struct):
     h = "void lmcp_unpack_"+struct.name+"(uint8_t** inb, size_t *size_remain, " + struct.name + "* outp) { \n"
+    h += checkmem_begin
     h += "if (inb == NULL || *inb == NULL) { *inb = NULL; return; }\n"
     h += "if (size_remain == NULL || *size_remain == 0) {*inb = NULL; return;} \n" 
+    h += checkmem_end
     h += struct.name+"* out = outp;\n"
     h += "uint32_t tmp; uint16_t tmp16; \n"
     h += "uint8_t isnull; \n"
@@ -337,11 +359,11 @@ def emit_structunpack(struct):
             else:
                 h += "lmcp_unpack_uint16_t(inb, size_remain, &tmp16); tmp = tmp16;\n"
             if field.kind == 'base':
-                h += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*) * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+") * tmp);\n"
             elif field.kind == 'enum':
-                h += "(out)->"+field.name+" = malloc(sizeof(int32_t*) * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof(int32_t) * tmp);\n"
             elif field.kind == 'struct':
-                h += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+"*) * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+") * tmp);\n"
             h += "if (out->"+field.name+"==0) { *inb = NULL; return; }\n"
             h += "out->"+field.name+"_ai.length = tmp;\n"
             h += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
@@ -369,7 +391,9 @@ def emit_free_substruct(struct, fieldname, typename):
 
 def emit_free(struct):
     header = "void lmcp_free_"+struct.name+"("+struct.name+"* out) {\n"
+    header += checkmem_begin
     header += "if (out == NULL) \n return; \n"
+    header += checkmem_end
     for field in struct.fields:
         if not field.typeinfo.isarray:
             if field.kind == 'struct':

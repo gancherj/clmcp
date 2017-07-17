@@ -10,11 +10,12 @@
 #define LMCP_TestStruct_TYPENAME "TestStruct"
 
 typedef struct {
-lmcp_object super;
-uint32_t* tstfield;
-array_info tstfield_ai;
+    lmcp_object super;
+    uint32_t tstfield;
 
-}TestStruct;void lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i);
-void lmcp_unpack_TestStruct(uint8_t* buf, TestStruct** outp);
-uint32_t lmcp_packsize_TestStruct (TestStruct* i);
-void lmcp_init_TestStruct (TestStruct* i);
+} TestStruct;
+size_t lmcp_packsize_TestStruct (TestStruct* i);
+void lmcp_init_TestStruct (TestStruct** i);
+void lmcp_unpack_TestStruct(uint8_t** buf, size_t *size_remain,TestStruct* outp);
+void lmcp_free_TestStruct(TestStruct* i);
+size_t lmcp_pack_TestStruct(uint8_t* buf, TestStruct* i);

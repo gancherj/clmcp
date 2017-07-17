@@ -1,8 +1,0 @@
-1. take MDM to generate target classes / cogfile
-
-MDM has structs s1, s2, s3
-
-2. single template file ctempl.cpp
-
-for each MDM file, for each struct, cogfile has
-ctempl.cpp -D mdm=file.mdm -D struct=s -o s.cpp
