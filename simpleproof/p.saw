@@ -1,2 +1,0 @@
-l <- llvm_load_module "a.bc";
-llvm_extract l "f" llvm_pure;

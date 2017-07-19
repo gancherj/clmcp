@@ -1,2 +1,0 @@
-l <- llvm_load_module "t.bc";
-llvm_symexec l "g" [] [] [] true;

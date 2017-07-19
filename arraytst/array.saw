@@ -1,6 +1,0 @@
-l <- llvm_load_module "a.bc";
-xs <- fresh_symbolic "is" {| [2][32] |};
-let allocs = [("i", 2)];
-let ins = [("*i", {{ xs }}, 2), ("size", {{ (2: [32]) }}, 1)];
-let outs = [("*return", 2)];
-llvm_symexec l "fstatic" allocs ins outs true;
