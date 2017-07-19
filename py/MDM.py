@@ -114,7 +114,7 @@ class FieldInfo:
 class StructInfo:
     def __init__(self, mdm, struct):
         self.name = struct.attrib['Name']
-        self.seriesname = (mdm.seriesname+"\0\0\0\0\0\0\0\0")[:8]
+        self.seriesname = mdm.seriesname
         self.version = mdm.version
         self.mdm = mdm
         if 'Extends' in struct.attrib:
