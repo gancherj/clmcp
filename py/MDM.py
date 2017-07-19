@@ -15,18 +15,6 @@ class TypeInfo:
         'real64': 'double',
         'string': 'char'}
 
-    basetypes_i = { # basetypes but only ints
-        'byte': 'uint8_t',
-        'char': 'char',
-        'bool': 'bool',
-        'int16': 'int16_t',
-        'uint16': 'uint16_t',
-        'int32': 'int32_t',
-        'uint32': 'uint32_t',
-        'int64': 'int64_t',
-        'real32': 'uint32_t',
-        'real64': 'uint64_t',
-        'string': 'char'}
 
     def __init__(self, typestr): #-1 and true -> varying array
         underlying = re.search('[a-zA-Z]+[0-9]*[a-zA-Z]*', typestr).group(0)

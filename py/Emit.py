@@ -114,6 +114,16 @@ def emit_toplevel_pack(mdm):
 Emits.toplevel_methods['pack'] = emit_toplevel_pack
 Emits.toplevel_headers['pack'] = "uint32_t lmcp_pack(uint8_t* buf, lmcp_object* o);\n"
 
+def emit_toplevel_pp(mdm):
+    s = "void lmcp_pp(lmcp_object *o) { \n"
+    s += "if (o == NULL) {return; }\n"
+    cases = {struct.name : "lmcp_pp_"+struct.name+"(("+struct.name+"*)o);\n" for struct in mdm.structs}
+    s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return;")
+    s += "} \n"
+    return s
+Emits.toplevel_methods['pp'] = emit_toplevel_pp
+Emits.toplevel_headers['pp'] = "void lmcp_pp(lmcp_object* o);\n"
+
 def emit_toplevel_free(mdm):
     s = "void lmcp_free(lmcp_object *o) { \n"
     s += "if (o == NULL) {return; }\n"
@@ -321,6 +331,63 @@ def emit_unpack_substruct(struct, fieldname, typename):
     header += "}\n"
     return header
 
+def emit_pp_base(basetype, fieldname):
+    if basetype == "char":
+        return "printf(\"%c\"," + fieldname + ");\n"
+    elif basetype == "uint64_t":
+        return "printf(\"%llu\"," + fieldname + ");\n"
+    elif basetype == "int64_t":
+        return "printf(\"%lld\"," + fieldname + ");\n"
+    elif basetype[0] in ['f', 'd']:
+        return "printf(\"%f\"," + fieldname + ");\n"
+    elif basetype[0] == "i":
+        return "printf(\"%i\"," + fieldname + ");\n"
+    elif basetype[0] == "u":
+        return "printf(\"%u\"," + fieldname + ");\n"
+    else:
+        print("error: type was " + basetype)
+        return "printf(\"ERR\");\n"
+
+def emit_pp(struct):
+    h = "void lmcp_pp_"+struct.name+"("+struct.name+"* s) { \n"
+    h += "printf(\""+struct.name+"{\");\n"
+    if struct.parent != 'lmcp_object':
+        h += "printf(\"Inherited from "+struct.parent+":\\n\");\n"
+        h += "lmcp_pp_"+struct.parent+"(&(s->super));\n"
+    for field in struct.fields:
+        h += "printf(\""+field.name+": \");\n"
+        if not field.typeinfo.isarray:
+            if field.kind == 'base':
+                h += emit_pp_base(TypeInfo.basetypes[field.typeinfo.typename], "s->"+field.name)
+            elif field.kind == 'enum':
+                h += "printf(\"%i\", s->"+field.name+");\n"
+            elif field.kind == 'struct':
+                h += "lmcp_pp_"+field.typeinfo.typename+"((s->"+field.name+"));\n"
+            else:
+                h += "printf(\"ERR\");\n"
+        else:
+            h += "printf(\"[\");\n"
+            h += "for (uint32_t index = 0; index < s->"+field.name+"_ai.length; index++) { \n"
+            if field.kind == 'base':
+                h += emit_pp_base(TypeInfo.basetypes[field.typeinfo.typename], "s->"+field.name+"[index]")
+            elif field.kind == 'enum':
+                h += "printf(\"%i\", s->"+field.name+"[index]);\n"
+            elif field.kind == 'struct':
+                h += "lmcp_pp_"+field.typeinfo.typename+"((s->"+field.name+"[index]));\n"
+            else:
+                h += "printf(\"ERR\");\n"
+            h += "printf(\",\");\n"
+            h += "}\n"
+        h += "printf(\"\\n\");\n"
+    h += "printf(\"}\");\n"
+    h += "}\n"
+    return h
+
+def emit_pp_header(struct):
+    return "void lmcp_pp_"+struct.name+"("+struct.name+"* s);\n"
+
+Emits.struct_methods['pp'] = emit_pp
+Emits.struct_headers['pp'] = emit_pp_header
 
 def emit_structunpack(struct):
     h = "int lmcp_unpack_"+struct.name+"(uint8_t** inb, size_t *size_remain, " + struct.name + "* outp) { \n"
