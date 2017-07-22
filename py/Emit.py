@@ -127,7 +127,7 @@ Emits.toplevel_headers['pp'] = "void lmcp_pp(lmcp_object* o);\n"
 def emit_toplevel_free(mdm):
     s = "void lmcp_free(lmcp_object *o) { \n"
     s += "if (o == NULL) {return; }\n"
-    cases = {struct.name : "lmcp_free_"+struct.name+"(("+struct.name+"*)o);\n" for struct in mdm.structs}
+    cases = {struct.name : "lmcp_free_"+struct.name+"(("+struct.name+"*)o, 1);\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'o->type', "return;")
     s += "} \n"
     return s
@@ -413,11 +413,11 @@ def emit_structunpack(struct):
             else:
                 h += "CHECK(lmcp_unpack_uint16_t(inb, size_remain, &tmp16))\n tmp = tmp16;\n"
             if field.kind == 'base':
-                h += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+") * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*) * tmp);\n"
             elif field.kind == 'enum':
-                h += "(out)->"+field.name+" = malloc(sizeof(int32_t) * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof(int32_t*) * tmp);\n"
             elif field.kind == 'struct':
-                h += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+") * tmp);\n"
+                h += "(out)->"+field.name+" = malloc(sizeof("+field.typeinfo.typename+"*) * tmp);\n"
             h += "if (out->"+field.name+"==0) { return -1; }\n"
             h += "out->"+field.name+"_ai.length = tmp;\n"
             h += "for (uint32_t index = 0; index < out->"+field.name+"_ai.length; index++) {\n"
@@ -438,14 +438,16 @@ Emits.struct_headers['unpack'] = emit_structunpack_header
 
 def emit_free_substruct(struct, fieldname, typename):
     header = "if (out->"+fieldname+" != NULL) {\n"
-    header += "lmcp_free_"+typename+"(out->"+fieldname+");\n"
+    header += "lmcp_free_"+typename+"(out->"+fieldname+", 1);\n"
     header += "} \n"
     return header
     
 
 def emit_free(struct):
-    header = "void lmcp_free_"+struct.name+"("+struct.name+"* out) {\n"
+    header = "void lmcp_free_"+struct.name+"("+struct.name+"* out, int out_malloced) {\n"
     header += "if (out == NULL) \n return; \n"
+    if struct.parent != 'lmcp_object':
+        header += "lmcp_free_"+struct.parent+"(&(out->super), 0);\n"
     for field in struct.fields:
         if not field.typeinfo.isarray:
             if field.kind == 'struct':
@@ -460,12 +462,12 @@ def emit_free(struct):
                 header += "}\n"
             header += "free(out->"+field.name+");\n"
             header += "} \n"
-    header += "free(out);\n"
+    header += "if (out_malloced == 1) { free(out); } \n"
     header += "} \n"            
     return header
 
 def emit_free_header(struct):
-    return "void lmcp_free_"+struct.name+"("+struct.name+"* i); \n"
+    return "void lmcp_free_"+struct.name+"("+struct.name+"* i, int out_malloced); \n"
 
 Emits.struct_methods['free'] = emit_free
 Emits.struct_headers['free'] = emit_free_header
