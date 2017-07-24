@@ -133,6 +133,7 @@ class StructInfo:
         return '\n'.join([
             "#define LMCP_"+self.name+"_SUB \""+self.subscription+"\"\n",
             "#define LMCP_"+self.name+"_TYPENAME \""+self.name+"\"\n",
+            "#define LMCP_"+self.name+"_TYPE "+self.id+"\n",
             struct_header,
             parent_field]
             + [f.emit() for f in self.fields]

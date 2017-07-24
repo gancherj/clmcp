@@ -143,7 +143,7 @@ def emit_toplevel_unpack(mdm):
     s += "int isnull; \n"
     s += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
     s += "isnull = lmcp_unpack_structheader(inb, size_remain, seriesname, &objtype, &objseries);\n"
-    s += "if (isnull == 0) { return -1; }"
+    s += "if (isnull == -1) { return -1; }"
     cases = {struct.name : "lmcp_init_"+struct.name+"(("+struct.name+"**)o); \n CHECK(lmcp_unpack_"+struct.name+"(inb, size_remain, ("+struct.name+"*)(*o)))\n" for struct in mdm.structs}
     s += Emits.emit_struct_switch(mdm, cases, 'objtype', "return 0;")
     s += "return 0; }\n"
