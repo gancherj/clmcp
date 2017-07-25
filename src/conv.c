@@ -113,16 +113,16 @@ int lmcp_unpack_uint64_t (uint8_t **buf, size_t *size_remain, uint64_t* out)
 
 
 size_t lmcp_pack_int8_t (uint8_t* buf, int8_t in) {
-    lmcp_pack_uint8_t(buf, *(uint8_t*)&in);
+    lmcp_pack_uint8_t(buf, *((uint8_t*)&in));
     return 1;
 }
 
 size_t lmcp_pack_int32_t (uint8_t* buf, int32_t in) {
-    lmcp_pack_uint32_t(buf, *(uint32_t*)&in);
+	  lmcp_pack_uint32_t(buf, *((uint32_t*)&in));
     return 4;
 }
 size_t lmcp_pack_int64_t (uint8_t* buf, int64_t in) {
-    lmcp_pack_uint64_t(buf, *(uint64_t*)&in);
+    lmcp_pack_uint64_t(buf, *((uint64_t*)&in));
     return 8;
 }
 
@@ -163,7 +163,7 @@ int lmcp_unpack_int64_t (uint8_t** buf, size_t *size_remain, int64_t* out) {
 
 // pack754() -- pack a floating point number into IEEE-754 format
  
- long long pack754(long double f, unsigned bits, unsigned expbits)
+long long pack754(long double f, unsigned bits, unsigned expbits)
 {
 	long double fnorm;
 	int shift;
