@@ -139,7 +139,6 @@ def emit_toplevel_unpack(mdm):
     s = "int lmcp_unpack(uint8_t** inb, size_t size, lmcp_object **o) {\n"
     s += "if (o == NULL) return -1;\n"
     s += "size_t* size_remain = &size;\n"
-    s += "uint32_t tmp; uint16_t tmp16; \n"
     s += "int isnull; \n"
     s += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
     s += "isnull = lmcp_unpack_structheader(inb, size_remain, seriesname, &objtype, &objseries);\n"
@@ -192,10 +191,7 @@ Emits.toplevel_headers['makemsg'] = "void lmcp_make_msg(uint8_t* buf, lmcp_objec
 def emit_init(struct):
     header = "void lmcp_init_"+struct.name+" ("+struct.name+"** i) { \n"
     header += "if (i == NULL) return;\n"
-    header += "(*i) = malloc(sizeof("+struct.name+"));\n"
-    header += "*(*i) = (const "+struct.name+"){0};\n" 
-    #if struct.parent != 'lmcp_object': if needed for something
-    #    header += "out += lmcp_init_"+struct.parent+" (&i->super); \n"
+    header += "(*i) = calloc(1,sizeof("+struct.name+"));\n"
     header += "((lmcp_object*)(*i)) -> type = "+struct.id+";\n"
     header += "}\n"
     return header
@@ -390,13 +386,13 @@ Emits.struct_methods['pp'] = emit_pp
 Emits.struct_headers['pp'] = emit_pp_header
 
 def emit_structunpack(struct):
-    h = "int lmcp_unpack_"+struct.name+"(uint8_t** inb, size_t *size_remain, " + struct.name + "* outp) { \n"
-    h += "if (inb == NULL || *inb == NULL) { return -1; }\n"
-    h += "if (size_remain == NULL || *size_remain == 0) {return -1;} \n" 
-    h += struct.name+"* out = outp;\n"
-    h += "uint32_t tmp; uint16_t tmp16; \n"
-    h += "uint8_t isnull; \n"
-    h += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
+    hp = "int lmcp_unpack_"+struct.name+"(uint8_t** inb, size_t *size_remain, " + struct.name + "* outp) { \n"
+    hp += "if (inb == NULL || *inb == NULL) { return -1; }\n"
+    hp += "if (size_remain == NULL || *size_remain == 0) {return -1;} \n" 
+    hp += struct.name+"* out = outp;\n"
+    use_tmp = False
+    use_tmp16 = False
+    h = ""
     if struct.parent != 'lmcp_object':
         h += "CHECK(lmcp_unpack_"+struct.parent+"(inb, size_remain, &(out->super)))\n"
     for field in struct.fields:
@@ -406,11 +402,15 @@ def emit_structunpack(struct):
             elif field.kind == 'enum':
                 h += "CHECK(lmcp_unpack_int32_t(inb, size_remain, (int*) &(out->"+field.name+")))\n"
             elif field.kind == 'struct':
+                h += "uint8_t isnull; \n"
+                h += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
                 h += emit_unpack_substruct(struct, field.name, field.typeinfo.typename)
         else:
+            use_tmp = True;
             if field.typeinfo.islargearray:
                 h += "CHECK(lmcp_unpack_uint32_t(inb, size_remain, &tmp))\n"
             else:
+                use_tmp16 = True;
                 h += "CHECK(lmcp_unpack_uint16_t(inb, size_remain, &tmp16))\n tmp = tmp16;\n"
             if field.kind == 'base':
                 h += "(out)->"+field.name+" = malloc(sizeof("+TypeInfo.basetypes[field.typeinfo.typename]+"*) * tmp);\n"
@@ -426,9 +426,15 @@ def emit_structunpack(struct):
             elif field.kind == 'enum':
                 h += "CHECK(lmcp_unpack_int32_t(inb, size_remain, (int*) &out->"+field.name+"[index]))\n"
             elif field.kind == 'struct':
+                h += "uint8_t isnull; \n"
+                h += "uint32_t objtype; uint16_t objseries; char seriesname[8];\n"
                 h += emit_unpack_substruct(struct, field.name + "[index]", field.typeinfo.typename)
             h += "}\n"
-    return h + " return 0;}\n"
+    if use_tmp:
+        hp += "uint32_t tmp;\n"
+    if use_tmp16:
+        hp += "uint16_t tmp16; \n"
+    return hp + h + " return 0;}\n"
 
 def emit_structunpack_header(struct):
     return "int lmcp_unpack_"+struct.name+"(uint8_t** buf, size_t *size_remain," + struct.name + "* outp);\n"
